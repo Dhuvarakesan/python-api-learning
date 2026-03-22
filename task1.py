@@ -5,6 +5,7 @@ from typing import Any, List, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from IPython.display import Image, display
 
 # LangChain/LangGraph Imports
 from langchain_core.tools import tool
@@ -134,6 +135,10 @@ Builder.add_edge("MathAgentNode", END)
 Builder.add_edge("GeneralAgentNode", END)
 
 Graph = Builder.compile()
+
+# Save the graph visualization as a PNG file
+with open("graph.png", "wb") as f:
+    f.write(Graph.get_graph().draw_mermaid_png())
 
 # --- 8. FastAPI Endpoints ---
 class ChatRequest(BaseModel):
