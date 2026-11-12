@@ -1,4 +1,7 @@
 import styles from './App.module.css';
+import type { TaskStatus } from './features/tasks/types';
+
+const initialTaskStatus: TaskStatus = 'pending';
 
 function App() {
   return (
@@ -10,7 +13,7 @@ function App() {
         </h1>
         <p className={styles.copy}>
           A browser-only React and TypeScript app shell is ready for the next
-          feature task.
+          feature task. New tasks will start as {initialTaskStatus}.
         </p>
       </section>
     </main>
