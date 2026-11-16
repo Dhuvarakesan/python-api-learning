@@ -1,0 +1,213 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      production_deployment:
+        description: "Run production deployment readiness gate"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+      security_reviewer_exception:
+        description: "Security Reviewer approved exception for high/critical dependency findings"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+      security_exception_reference:
+        description: "Link or ticket ID for the documented Security Reviewer exception"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: lts/*
+
+jobs:
+  quality:
+    name: Type Check, Lint, and Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test:unit
+
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Build app for integration tests
+        run: npm run build
+
+      - name: Integration tests
+        run: npm run test:integration
+
+  accessibility:
+    name: Accessibility Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Build app for accessibility checks
+        run: npm run build
+
+      - name: Patient-flow accessibility checks
+        run: npm run accessibility
+
+  build:
+    name: Frontend, Backend, and Worker Builds
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Frontend build
+        run: npm run build:frontend
+
+      - name: Backend build
+        run: npm run build:backend
+
+      - name: Worker build
+        run: npm run build:worker
+
+  security:
+    name: Dependency Scan and SBOM
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Dependency/CVE scan blocks high and critical findings
+        run: npm run security:audit
+
+      - name: Generate CycloneDX SBOM
+        run: npm run security:sbom
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-cyclonedx-json
+          path: sbom.cdx.json
+          if-no-files-found: error
+
+  production-deployment-gate:
+    name: Production Deployment Gate
+    runs-on: ubuntu-latest
+    needs:
+      - quality
+      - integration
+      - accessibility
+      - build
+      - security
+    if: always()
+    environment: production
+    steps:
+      - name: Check gate results
+        env:
+          QUALITY_RESULT: ${{ needs.quality.result }}
+          INTEGRATION_RESULT: ${{ needs.integration.result }}
+          ACCESSIBILITY_RESULT: ${{ needs.accessibility.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          SECURITY_RESULT: ${{ needs.security.result }}
+          PRODUCTION_DEPLOYMENT: ${{ github.event.inputs.production_deployment || 'false' }}
+          SECURITY_REVIEWER_EXCEPTION: ${{ github.event.inputs.security_reviewer_exception || 'false' }}
+          SECURITY_EXCEPTION_REFERENCE: ${{ github.event.inputs.security_exception_reference || '' }}
+        run: |
+          set -euo pipefail
+
+          for gate in QUALITY_RESULT INTEGRATION_RESULT ACCESSIBILITY_RESULT BUILD_RESULT; do
+            result="${!gate}"
+            if [ "$result" != "success" ]; then
+              echo "::error::$gate was $result. Production deployment is blocked."
+              exit 1
+            fi
+          done
+
+          if [ "$SECURITY_RESULT" != "success" ]; then
+            if [ "$SECURITY_REVIEWER_EXCEPTION" = "true" ] && [ -n "$SECURITY_EXCEPTION_REFERENCE" ]; then
+              echo "::warning::Security gate did not pass, but Security Reviewer exception is documented: $SECURITY_EXCEPTION_REFERENCE"
+            else
+              echo "::error::Dependency/CVE or SBOM gate was $SECURITY_RESULT. A documented Security Reviewer exception is required to proceed."
+              exit 1
+            fi
+          fi
+
+          if [ "$PRODUCTION_DEPLOYMENT" = "true" ]; then
+            echo "Production deployment readiness gate passed."
+          else
+            echo "Required quality and security gates passed. Production deployment was not requested."
+          fi
