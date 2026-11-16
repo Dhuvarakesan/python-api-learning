@@ -1,0 +1,47 @@
+.shell {
+  width: 100%;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-page);
+  background:
+    linear-gradient(135deg, rgba(20, 184, 166, 0.16), transparent 36%),
+    linear-gradient(315deg, rgba(234, 179, 8, 0.14), transparent 34%),
+    var(--color-page);
+  color: var(--color-text);
+  overflow-x: clip;
+}
+
+.panel {
+  width: min(100%, 34rem);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: clamp(1.5rem, 5vw, 3rem);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.eyebrow {
+  margin: 0 0 0.75rem;
+  color: var(--color-accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(2rem, 12vw, 3.5rem);
+  line-height: 1.05;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.copy {
+  margin: 1rem 0 0;
+  color: var(--color-muted);
+  font-size: 1rem;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
