@@ -1,30 +1,54 @@
-import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { createApiErrorResponse } from "@clinic/contracts";
-import { getCorrelationId } from "./middleware/correlation.js";
-import { sendJson } from "./middleware/json.js";
-import { createHealthResponse, isHealthRoute } from "./routes/health.js";
+import { type StaffRole } from "@clinic/auth";
+import {
+  requireStaffRole,
+  type RequireStaffRoleOptions,
+  type StaffRequestContext,
+} from "./middleware/requireStaffRole.js";
+import {
+  getStaffSessionRoute,
+  type StaffSessionRouteResult,
+} from "./routes/staff/session.js";
 
-export const API_VERSION_PREFIX = "/api/v1";
+export interface ApiRouteDefinition {
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  path: string;
+  requiredStaffRoles?: readonly StaffRole[];
+}
 
-export function createApiServer() {
-  return createServer((request: IncomingMessage, response: ServerResponse) => {
-    const correlationId = getCorrelationId(request);
-    response.setHeader("x-correlation-id", correlationId);
+export interface ProtectedStaffRouteDefinition extends ApiRouteDefinition {
+  requiredStaffRoles: readonly StaffRole[];
+  authorize: ReturnType<typeof requireStaffRole>;
+  handle: (context: StaffRequestContext) => StaffSessionRouteResult;
+}
 
-    if (request.method === "GET" && isHealthRoute(request.url)) {
-      sendJson(response, 200, createHealthResponse(correlationId));
-      return;
-    }
+export interface ApiServerDefinition {
+  routes: {
+    staffSession: ProtectedStaffRouteDefinition;
+  };
+}
 
-    if (isHealthRoute(request.url)) {
-      sendJson(
-        response,
-        405,
-        createApiErrorResponse("METHOD_NOT_ALLOWED", "Method not allowed.", correlationId),
-      );
-      return;
-    }
+const STAFF_ROUTE_ROLES = [
+  "clinic_administrator",
+  "scheduling_staff",
+] as const satisfies readonly StaffRole[];
 
-    sendJson(response, 404, createApiErrorResponse("NOT_FOUND", "Route not found.", correlationId));
-  });
+export function createApiServerDefinition(
+  options: RequireStaffRoleOptions = {},
+): ApiServerDefinition {
+  return {
+    routes: {
+      staffSession: {
+        method: "GET",
+        path: "/staff/session",
+        requiredStaffRoles: STAFF_ROUTE_ROLES,
+        authorize: requireStaffRole(STAFF_ROUTE_ROLES, options),
+        handle: (context) =>
+          getStaffSessionRoute({
+            staffSession: context.staffSession,
+            now: options.now,
+            production: options.production,
+          }),
+      },
+    },
+  };
 }

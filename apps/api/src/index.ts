@@ -12,4 +12,16 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   });
 }
 
-export { createApiServer };
+export function createHealthResponse(): HealthResponse {
+  return {
+    status: "ok",
+    service: "clinic-api",
+  };
+}
+
+export { createApiServerDefinition } from "./server.js";
+export type {
+  ApiRouteDefinition,
+  ApiServerDefinition,
+  ProtectedStaffRouteDefinition,
+} from "./server.js";
