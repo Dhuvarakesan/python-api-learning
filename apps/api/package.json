@@ -20,7 +20,7 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@clinic/auth": "0.1.0",
+    "@clinic/contracts": "0.1.0",
     "@clinic/observability": "0.1.0"
   },
   "devDependencies": {
