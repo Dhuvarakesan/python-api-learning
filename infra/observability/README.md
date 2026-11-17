@@ -17,3 +17,10 @@
 - Observability vendors or runtimes that receive PHI or PHI-adjacent events must be HIPAA-eligible with BAAs where required.
 - Use correlation IDs for diagnostics instead of patient identifiers.
 - Retention must follow approved operational and audit policies, with audit logs retained for 6 years where applicable.
+
+## Artifacts
+
+- `dashboards/audit-operations-dashboard.json` defines panels for booking latency, availability lookup latency, EHR error rate, hold counts, conflict counts, schedule view latency, messaging delivery status, and audit delivery failures.
+- `alerts/audit-operations-alerts.json` defines alerts for integration outages, EHR error spikes, booking failure spikes, hold release failures, audit delivery failures, message callback failures, availability breaches, and CI/CD security gate failures.
+
+Structured logs and trace spans must include `correlation_id` and must exclude OTP codes, message bodies, secrets, access tokens, refresh tokens, authorization headers, raw EHR payloads, and unnecessary patient details.
