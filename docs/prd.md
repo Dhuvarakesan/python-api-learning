@@ -4,116 +4,122 @@
 
 ## Document Metadata
 
-- **Product/Application:** Simple Todo Application
-- **Document ID:** PRD-TODO
+- **Product/Application:** Online Appointment Scheduling System
+- **Document ID:** PRD-APPT-SCHED
 - **Version:** 0.1
 - **Status:** Draft
 - **Owner:** TBD
 - **Contributors:** TBD
-- **Last Updated:** 2026-11-12
+- **Last Updated:** 2026-11-17
 
 ---
 
 ## 1. Executive Summary
 
-The Simple Todo Application is a lightweight browser-based internal demo for a small business. It allows a single user on one browser/device to create, view, edit, delete, search, filter, and track personal tasks with a title, description, due date, priority, and completion status.
+The Online Appointment Scheduling System will allow clinic patients to book and reschedule configured standard non-urgent appointments through a mobile-responsive web portal instead of relying only on phone calls during office hours. The product is intended for a small healthcare clinic operating under HIPAA requirements.
 
-The product is expected to demonstrate that useful task management can be delivered without backend APIs, backend databases, paid services, user accounts, or multi-device synchronization. Task data persists after browser refresh through browser localStorage, while the dashboard gives immediate visibility into total, pending, completed, and overdue task counts.
+The system will reduce booking friction for new and existing patients, support one-time-code verification before booking changes, send email and SMS appointment reminders, and give scheduling staff and providers a single view of the day’s schedule. The first release will integrate with the existing EHR/practice-management system using real-time two-way scheduling sync to protect against double booking.
 
-The initial release should remain simple and client-side, with automated quality gates plus manual acceptance checks where browser/device automation is unavailable.
+The expected value is fewer lost bookings from missed calls and voicemail delays, lower scheduling burden on front-desk staff, and clearer daily schedule visibility for clinic operations.
 
 ## 2. Problem Statement
 
-Small-business internal users need a simple way to remember, prioritize, and track individual tasks without losing them on browser refresh. Today, the intended demo use case requires a lightweight task list that supports core task management flows and basic task visibility without introducing operational overhead from accounts, backends, team sharing, or paid services.
+The clinic loses bookings because patients can currently book only by phone during office hours. Patients who call after hours, cannot wait on hold, or do not receive a timely callback may fail to schedule a standard non-urgent visit. The clinic has known missed-call/voicemail volume but does not yet have a quantified conversion-loss estimate.
+
+Front-desk staff also need a consolidated daily schedule view so they can understand appointments, patient contact details, reason for visit, status, and provider grouping without relying on fragmented scheduling workflows.
 
 ## 3. Product Vision
 
-The target end state is a simple, reliable, responsive, browser-only Todo application that lets a single user manage personal tasks end to end on one device, quickly understand workload status from a dashboard, and retain task data after refreshing the browser.
+The target end state is a HIPAA-compliant, mobile-responsive online scheduling experience where new and existing patients can self-serve standard non-urgent booking and rescheduling, receive timely reminders, and trust that available slots reflect the clinic’s real schedule. Staff and providers can view the day’s appointments in one place, while the clinic maintains operational control over appointment types, rescheduling cutoffs, reminder timing, and provider availability.
 
 ## 4. Goals and Success Measures
 
 ### 4.1 Goals
 
-- Enable a single user to create, view, edit, delete, and update the status of tasks.
-- Enable the user to search tasks by title and filter tasks by status.
-- Display total, pending, completed, and overdue task counts on a dashboard.
-- Persist task data after browser refresh using browser localStorage only.
-- Keep the first release lightweight, client-side, and free of backend or paid-service dependencies.
-- Provide release evidence through automated quality gates and manual browser/device checks where automation is unavailable.
+- Enable new and existing patients to book configured standard non-urgent appointments online.
+- Enable patients to reschedule eligible appointments online until a staff-configured cutoff.
+- Send appointment reminders through email and SMS using staff-configurable timing with default 72-hour and 24-hour reminders.
+- Provide staff and providers a consolidated daily schedule view grouped by provider and time.
+- Prevent double booking through real-time two-way EHR/practice-management scheduling sync and slot holds during checkout.
+- Meet HIPAA obligations through HIPAA-eligible vendors with BAAs, encryption, access controls, and audit logs.
 
 ### 4.2 Success Measures
 
 | ID | Measure | Baseline | Target | Measurement Method |
 |---|---|---:|---:|---|
-| KPI-001 | Must-priority functional acceptance flow pass rate | No application exists | 100% | Automated E2E tests plus manual acceptance checks where browser/device automation is unavailable |
-| KPI-002 | Persistence acceptance pass rate | No persistence exists | 100% | Automated tests verifying create, edit, delete, status change, dashboard recalculation, refresh persistence, and localStorage failure handling |
-| KPI-003 | Domain and persistence utility line coverage | No code exists | 80% | CI coverage report for domain and persistence utilities |
-| KPI-004 | High and critical dependency findings before release | No scan exists | 0 unresolved findings | CI dependency/CVE scan and documented remediation or approved risk acceptance |
-| KPI-005 | Supported browser acceptance coverage | No browser coverage exists | Core flows pass on latest stable Chrome, Edge, Firefox, Safari, mobile Safari, and mobile Chrome | Playwright coverage where supported plus manual checks where automation is unavailable |
+| KPI-001 | Share of configured standard non-urgent appointments booked online | 0% before launch | At least 30% within 90 days of launch | Scheduling analytics comparing online bookings to total eligible bookings |
+| KPI-002 | Missed-call/voicemail scheduling burden | Known missed-call/voicemail volume; exact numeric baseline TBD | TBD | Phone system reports and scheduling workflow review |
+| KPI-003 | Successful completion of Must-priority acceptance flows | No online scheduling system exists | 100% of Must-priority requirements accepted before broader rollout | Product acceptance testing and release checklist |
 
 ## 5. Scope
 
 ### 5.1 In Scope
 
-- Single-user task management in one browser/device.
-- Task creation with title, description, due date, priority, and default pending status.
-- Task viewing, editing, deletion with confirmation, and status toggle between pending and completed.
-- Search by title using case-insensitive partial matching.
-- Status filters for All, Pending, and Completed.
-- Combined search and status filtering.
-- Dashboard counts for total, pending, completed, and overdue tasks.
-- Default task ordering with pending tasks first, completed tasks second, and earliest due dates first within each status group.
-- Browser localStorage persistence after browser refresh.
-- Inline validation for missing title, invalid due date, and invalid priority values.
-- Clear error handling when browser localStorage is unavailable, full, corrupted, or unreadable.
-- Basic accessibility and responsive layout for desktop and mobile browsers.
-- Static SPA delivery using React, TypeScript, and Vite.
+- Mobile-responsive patient web portal for online appointment booking.
+- Online booking for new and existing patients for staff-configured standard non-urgent visit types.
+- Patient rescheduling for eligible appointments until a staff-configured cutoff per appointment type.
+- One-time-code verification by SMS or email before booking changes.
+- Real-time two-way EHR/practice-management scheduling sync.
+- Slot hold during patient checkout to reduce double-booking risk.
+- Email and SMS reminders with staff-configurable timing and default 72-hour and 24-hour reminders.
+- Staff daily schedule view showing appointments, patient contact details, reason for visit, appointment status, and provider grouping.
+- Provider visibility into the day’s schedule.
+- HIPAA-appropriate security, privacy, vendor, and audit controls.
+- Pilot rollout with one provider before broader clinic launch.
 
 ### 5.2 Out of Scope
 
-- User accounts and authentication.
-- Multi-device synchronization.
-- Team sharing or collaborative task lists.
-- Teams, managers, admins, and external customer user flows.
-- Task assignment to other users.
-- Automated reminders or calendar integrations.
-- Backend APIs and backend database persistence.
-- Paid third-party UI, storage, analytics, telemetry, or infrastructure services.
-- Manager reporting or audit logs.
-- Runtime product telemetry that transmits task content.
+- Urgent or emergency scheduling.
+- Billing and payments.
+- Clinical messaging.
+- Telehealth visit delivery.
+- Native mobile applications.
+- Appointment types not configured by staff for online scheduling.
+- Voice-call reminders in the first release.
+- Request-only scheduling workflows where staff later confirm a time.
 
 ## 6. Personas and Users
 
-### PERSONA-001 — Individual Task User
+### PERSONA-001 — Patient
 
-- **Description:** A single internal small-business user managing personal tasks in one browser/device.
-- **Primary Need:** Create and maintain a simple prioritized task list that survives browser refresh.
-- **Key Pain Point:** Important tasks and priorities can be forgotten or lost without a lightweight persistent task tool.
+- **Description:** A new or existing clinic patient seeking a standard non-urgent appointment.
+- **Primary Need:** Book or reschedule an eligible appointment online outside office-hour phone constraints.
+- **Key Pain Point:** Phone-only scheduling during office hours makes booking inconvenient and can cause missed appointment opportunities.
+
+### PERSONA-002 — Front-Desk Scheduling Staff
+
+- **Description:** Clinic staff responsible for managing daily appointment operations and patient scheduling support.
+- **Primary Need:** See the day’s appointments in one place with patient contact details, reason for visit, status, and provider grouping.
+- **Key Pain Point:** Missed calls, voicemail callbacks, and fragmented schedule visibility create operational burden and lost booking risk.
+
+### PERSONA-003 — Provider
+
+- **Description:** Clinic provider whose schedule includes standard non-urgent patient appointments.
+- **Primary Need:** View the day’s scheduled appointments and understand which patients are booked.
+- **Key Pain Point:** Limited schedule visibility can make daily preparation and coordination harder.
 
 ## 7. Assumptions and Dependencies
 
 ### Assumptions
 
-- ASM-001 — The initial product serves one user on one browser/device only.
-- ASM-002 — Browser localStorage is acceptable for demo persistence and no backend storage is required.
-- ASM-003 — Title is the only required task field.
-- ASM-004 — Due date, description, and priority are optional task fields.
-- ASM-005 — Overdue means a pending task with a due date before the user's current local date.
-- ASM-006 — The task priority set is Low, Medium, and High.
-- ASM-007 — Priority is display-only in the first release and does not affect ordering or dashboard counts.
-- ASM-008 — Task data is retained in localStorage until the user deletes the task or clears browser/application data.
+- ASM-001 — The first release supports a mobile-responsive web portal only and does not include a native mobile app.
+- ASM-002 — Only staff-configured standard non-urgent visit types are eligible for online booking and rescheduling.
+- ASM-003 — New and existing patients are eligible to book configured non-urgent visit types online.
+- ASM-004 — A one-time code sent by SMS or email is sufficient verification for booking and rescheduling actions in the first release.
+- ASM-005 — Reminder timing will be staff-configurable, with default reminders at 72 hours and 24 hours before appointment start.
+- ASM-006 — The first rollout will pilot with one provider before broader clinic launch.
 
 ### Dependencies
 
-- DEP-001 — The user must access the application in a browser that supports localStorage.
-- DEP-002 — The implementation must be able to read from and write to browser localStorage.
-- DEP-003 — Static hosting must serve compiled application assets over HTTPS.
-- DEP-004 — CI/CD must run install, typecheck, lint, tests, build, dependency scan, SBOM generation, and deployment smoke checks.
-- DEP-005 — Acceptance testing must cover all Must-priority flows before release.
+- DEP-001 — Existing EHR/practice-management system must support real-time two-way scheduling integration or an equivalent approved integration path.
+- DEP-002 — SMS and email vendors must be HIPAA-eligible where PHI is involved and must execute BAAs as required.
+- DEP-003 — Clinic staff must define eligible appointment types, provider availability rules, reminder settings, and rescheduling cutoffs.
+- DEP-004 — The clinic must provide or approve patient-facing website placement for the scheduling portal.
+- DEP-005 — Product acceptance depends on validation of HIPAA security controls, access controls, encryption, and audit logging.
 
 ## 8. Functional Requirements
 
-### PRD-FR-001 — Create Task
+### PRD-FR-001 — Patient Online Booking
 
 - **Priority:** Must
 - **Feature:** FEAT-001
@@ -121,22 +127,22 @@ The target end state is a simple, reliable, responsive, browser-only Todo applic
 
 **Requirement**
 
-The system shall allow the user to create a task with a required non-empty trimmed title, optional description, optional due date, optional priority, and an initial pending status.
+The system shall allow new and existing patients to book staff-configured standard non-urgent appointments through a mobile-responsive web portal.
 
 **Business Rationale**
 
-Task creation is the core action required for the user to remember and prioritize work.
+Online booking reduces reliance on phone-only scheduling and addresses lost booking opportunities outside office hours.
 
 **Acceptance Criteria**
 
-1. Given the user enters a non-empty title and valid optional fields, when they save the task, then the task appears in the task list.
-2. Given a newly created task, when it appears in the task list, then its status is pending by default.
-3. Given the user selects Low, Medium, or High priority, when the task is saved, then the selected priority is displayed with the task.
-4. Given the user leaves description, due date, or priority blank, when the task is saved with a valid title, then the task is created successfully.
+1. Given an eligible appointment type is configured for online booking, when a patient selects that appointment type, then the system displays available appointment times for that type.
+2. Given a patient completes all required booking fields and verification, when they confirm an available slot, then the appointment is created in the scheduling system.
+3. Given an appointment type is not configured for online booking, when a patient uses the portal, then that appointment type is not offered for self-scheduling.
+4. Given a patient attempts to book an urgent or emergency appointment, when the portal presents booking options, then urgent/emergency scheduling is not offered as an online booking option.
 
 ---
 
-### PRD-FR-002 — Validate Task Form
+### PRD-FR-002 — Patient Rescheduling
 
 - **Priority:** Must
 - **Feature:** FEAT-001
@@ -144,135 +150,22 @@ Task creation is the core action required for the user to remember and prioritiz
 
 **Requirement**
 
-The system shall prevent saving a task when the title is missing after trimming whitespace, the due date is invalid when entered, or the priority is not Low, Medium, or High when selected.
+The system shall allow patients to reschedule eligible standard non-urgent appointments online until the staff-configured cutoff for the appointment type.
 
 **Business Rationale**
 
-Validation prevents unusable task records and helps the user correct mistakes without guesswork.
+Self-service rescheduling lowers staff workload while preserving clinic control over late changes.
 
 **Acceptance Criteria**
 
-1. Given the title field is empty or whitespace-only, when the user attempts to save, then the task is not saved.
-2. Given the title field is invalid, when the user attempts to save, then an inline error message is displayed for the title field.
-3. Given the due date contains an invalid date value, when the user attempts to save, then the task is not saved and the due date field displays inline guidance.
-4. Given the priority value is not Low, Medium, or High, when the user attempts to save, then the task is not saved and the priority field displays inline guidance.
+1. Given an appointment is eligible for online rescheduling and is before the configured cutoff, when the verified patient selects a new available time, then the appointment is updated to the new time.
+2. Given an appointment is past the configured rescheduling cutoff, when the patient attempts online rescheduling, then the system blocks the change and displays clinic contact guidance.
+3. Given the appointment type is not eligible for online rescheduling, when the patient attempts to reschedule online, then the system does not allow self-service rescheduling.
+4. Given rescheduling succeeds, when staff view the daily schedule, then the updated appointment time is visible.
 
 ---
 
-### PRD-FR-003 — View Task List
-
-- **Priority:** Must
-- **Feature:** FEAT-001
-- **Persona:** PERSONA-001
-
-**Requirement**
-
-The system shall display saved tasks in a task list showing title, description, due date, priority, and status when those values exist.
-
-**Business Rationale**
-
-The user needs a clear list of saved tasks to understand current work and task details.
-
-**Acceptance Criteria**
-
-1. Given one or more saved tasks exist, when the user views the task list, then each saved task is visible.
-2. Given a task has description, due date, priority, or status values, when the task is displayed, then those values are visible.
-3. Given no tasks exist, when the user views the task list, then an empty state is displayed instead of task rows.
-
----
-
-### PRD-FR-004 — Default Task Ordering
-
-- **Priority:** Must
-- **Feature:** FEAT-001
-- **Persona:** PERSONA-001
-
-**Requirement**
-
-The system shall order the default task list with pending tasks first, completed tasks second, and tasks sorted by earliest due date first within each status group, with tasks that have no due date last.
-
-**Business Rationale**
-
-Default ordering keeps active and time-sensitive work most visible without requiring the user to configure sorting.
-
-**Acceptance Criteria**
-
-1. Given pending and completed tasks exist, when the task list is displayed, then pending tasks appear before completed tasks.
-2. Given multiple tasks in the same status group have due dates, when the task list is displayed, then earlier due dates appear before later due dates.
-3. Given tasks in the same status group include tasks without due dates, when the task list is displayed, then tasks without due dates appear after tasks with due dates.
-4. Given two tasks differ only by priority, when the default task list is displayed, then priority does not override status or due-date ordering.
-
----
-
-### PRD-FR-005 — Edit Task
-
-- **Priority:** Must
-- **Feature:** FEAT-001
-- **Persona:** PERSONA-001
-
-**Requirement**
-
-The system shall allow the user to edit an existing task's title, description, due date, and priority.
-
-**Business Rationale**
-
-Tasks often change, so users need to update task details without deleting and recreating records.
-
-**Acceptance Criteria**
-
-1. Given an existing task, when the user opens it for editing, then its current editable values are available for modification.
-2. Given the user changes valid task values and saves, when the task list is shown, then the updated values are displayed.
-3. Given the user attempts to save an edit with a missing title, invalid due date, or invalid priority, then the edit is not saved and inline field-level errors are displayed.
-4. Given the user successfully saves an edit, when the save completes, then the user returns to the task list and dashboard counts update immediately.
-
----
-
-### PRD-FR-006 — Delete Task
-
-- **Priority:** Must
-- **Feature:** FEAT-001
-- **Persona:** PERSONA-001
-
-**Requirement**
-
-The system shall require confirmation before deleting a task and shall remove the task only after the user confirms deletion.
-
-**Business Rationale**
-
-Deletion confirmation reduces accidental loss of task data.
-
-**Acceptance Criteria**
-
-1. Given an existing task, when the user initiates deletion, then a confirmation prompt is displayed before deletion occurs.
-2. Given the user confirms deletion, when the confirmation is submitted, then the task is removed from the task list.
-3. Given the user cancels deletion, when the confirmation is dismissed, then the task remains in the task list unchanged.
-4. Given a task is deleted, when dashboard counts are displayed, then the counts reflect the deletion immediately.
-
----
-
-### PRD-FR-007 — Toggle Task Status
-
-- **Priority:** Must
-- **Feature:** FEAT-001
-- **Persona:** PERSONA-001
-
-**Requirement**
-
-The system shall allow the user to mark a task as completed or pending.
-
-**Business Rationale**
-
-Status tracking lets the user distinguish active work from finished work and drives dashboard counts and filters.
-
-**Acceptance Criteria**
-
-1. Given a pending task, when the user marks it completed, then the task status changes to completed.
-2. Given a completed task, when the user marks it pending, then the task status changes to pending.
-3. Given a task status changes, when dashboard counts and filters are displayed, then they reflect the updated status.
-
----
-
-### PRD-FR-008 — Search Tasks by Title
+### PRD-FR-003 — One-Time-Code Verification
 
 - **Priority:** Must
 - **Feature:** FEAT-002
@@ -280,45 +173,22 @@ Status tracking lets the user distinguish active work from finished work and dri
 
 **Requirement**
 
-The system shall allow the user to search tasks by title using case-insensitive partial matching on title only.
+The system shall verify patients using a one-time code sent by SMS or email before allowing booking changes.
 
 **Business Rationale**
 
-Title search helps the user quickly find known tasks without scanning the full list.
+Verification reduces unauthorized booking changes while keeping the patient experience simpler than full account registration.
 
 **Acceptance Criteria**
 
-1. Given tasks with titles exist, when the user enters a partial title search term, then matching task titles are displayed.
-2. Given a task title differs only by letter case from the search term, when the user searches, then the task is included in results.
-3. Given the search term appears only in a task description and not in the title, when the user searches, then that task is not included.
-4. Given no task titles match the search term, when the user searches, then a no-results state is displayed.
+1. Given a patient initiates a booking or rescheduling action that requires verification, when they choose SMS or email verification, then the system sends a one-time code through the selected channel.
+2. Given the patient enters the correct active one-time code, when they submit it, then the system permits them to continue the booking or rescheduling flow.
+3. Given the patient enters an incorrect or expired one-time code, when they submit it, then the system blocks continuation and displays a clear verification error.
+4. Given a booking change is attempted without successful verification, when the patient submits the change, then the appointment is not created or modified.
 
 ---
 
-### PRD-FR-009 — Filter Tasks by Status
-
-- **Priority:** Must
-- **Feature:** FEAT-002
-- **Persona:** PERSONA-001
-
-**Requirement**
-
-The system shall allow the user to filter tasks by All, Pending, and Completed status.
-
-**Business Rationale**
-
-Status filtering helps the user focus on active work or review completed work.
-
-**Acceptance Criteria**
-
-1. Given the All filter is selected, when tasks exist, then pending and completed tasks are displayed.
-2. Given the Pending filter is selected, when tasks exist, then only pending tasks are displayed.
-3. Given the Completed filter is selected, when tasks exist, then only completed tasks are displayed.
-4. Given a status filter and title search are both applied, when results are shown, then only tasks matching both criteria are displayed.
-
----
-
-### PRD-FR-010 — Dashboard Task Counts
+### PRD-FR-004 — Real-Time Availability and Slot Holds
 
 - **Priority:** Must
 - **Feature:** FEAT-003
@@ -326,23 +196,45 @@ Status filtering helps the user focus on active work or review completed work.
 
 **Requirement**
 
-The system shall display dashboard counts for total tasks, pending tasks, completed tasks, and overdue tasks.
+The system shall use real-time two-way EHR/practice-management availability and hold selected slots during checkout to reduce double-booking risk.
 
 **Business Rationale**
 
-Dashboard counts give the user immediate visibility into workload and progress.
+Reliable availability is essential for patient trust and staff efficiency; double booking would create operational and clinical disruption.
 
 **Acceptance Criteria**
 
-1. Given saved tasks exist, when the dashboard is displayed, then total count equals the number of saved tasks.
-2. Given saved tasks exist, when the dashboard is displayed, then pending count equals the number of tasks with pending status.
-3. Given saved tasks exist, when the dashboard is displayed, then completed count equals the number of tasks with completed status.
-4. Given pending tasks with due dates before the user's current local date exist, when the dashboard is displayed, then overdue count equals the number of those tasks.
-5. Given completed tasks with due dates before the user's current local date exist, when the dashboard is displayed, then those tasks are not included in the overdue count.
+1. Given a patient views appointment availability, when the portal displays slots, then the slots reflect current availability from the integrated scheduling system.
+2. Given a patient selects an available slot, when checkout begins, then the system places a temporary hold on that slot or uses an equivalent conflict-prevention mechanism.
+3. Given another user attempts to book a held or no-longer-available slot, when they confirm booking, then the system prevents duplicate booking.
+4. Given checkout fails or expires, when the slot hold is no longer needed, then the system releases the hold or equivalent reservation.
 
 ---
 
-### PRD-FR-011 — Persist Tasks After Browser Refresh
+### PRD-FR-005 — Booking Failure Handling
+
+- **Priority:** Must
+- **Feature:** FEAT-003
+- **Persona:** PERSONA-001
+
+**Requirement**
+
+The system shall show a clear error, release any held slot, and prompt the patient to choose another time or call the clinic when booking or rescheduling fails because a slot is unavailable or the scheduling action cannot be completed.
+
+**Business Rationale**
+
+Patients need clear recovery guidance when availability changes or integration failures occur during checkout.
+
+**Acceptance Criteria**
+
+1. Given a selected slot becomes unavailable before confirmation, when the patient attempts to complete booking, then the system displays a clear unavailability error.
+2. Given a slot was held during a failed checkout, when the failure is handled, then the hold is released or made unavailable according to the scheduling system’s conflict rules.
+3. Given booking or rescheduling cannot be completed, when the error is displayed, then the patient is prompted to choose another time or call the clinic.
+4. Given a booking fails, when staff review the schedule, then no duplicate or partially created appointment appears as confirmed.
+
+---
+
+### PRD-FR-006 — Appointment Reminders
 
 - **Priority:** Must
 - **Feature:** FEAT-004
@@ -350,287 +242,299 @@ Dashboard counts give the user immediate visibility into workload and progress.
 
 **Requirement**
 
-The system shall persist task data in browser localStorage so saved tasks remain available after browser refresh.
+The system shall send appointment reminders by email and SMS using staff-configurable timing with default reminders at 72 hours and 24 hours before the appointment.
 
 **Business Rationale**
 
-Persistence after refresh is required to solve the core pain of not losing tasks during normal browser use.
+Reminders help patients remember appointments and reduce manual reminder workload for clinic staff.
 
 **Acceptance Criteria**
 
-1. Given a task has been saved, when the user refreshes the browser, then the task remains visible after reload.
-2. Given a task has been edited, deleted, or status-changed, when the user refreshes the browser, then the latest saved task state is preserved.
-3. Given dashboard counts existed before refresh, when the user refreshes the browser, then counts are recalculated from persisted task data.
+1. Given a patient has a scheduled appointment with valid reminder contact information and consent where required, when a configured reminder time is reached, then the system sends the reminder through the configured email and/or SMS channel.
+2. Given no custom reminder timing is configured, when reminders are scheduled, then reminders use the default 72-hour and 24-hour timing.
+3. Given staff update reminder timing for an appointment type, when future reminders are scheduled for that type, then the updated timing is applied.
+4. Given a reminder fails to send, when staff review reminder delivery status or audit evidence, then the failure is visible according to system logging capabilities.
 
 ---
 
-### PRD-FR-012 — Local Storage Failure Handling
+### PRD-FR-007 — Staff Daily Schedule View
 
 - **Priority:** Must
-- **Feature:** FEAT-004
-- **Persona:** PERSONA-001
+- **Feature:** FEAT-005
+- **Persona:** PERSONA-002
 
 **Requirement**
 
-The system shall show a clear error when browser localStorage is unavailable, full, corrupted, or unreadable and task data cannot be loaded or saved reliably.
+The system shall provide front-desk scheduling staff a daily schedule view showing appointments, patient contact details, reason for visit, appointment status, and provider grouping.
 
 **Business Rationale**
 
-The user must know when persistence is not working so they do not assume tasks will survive refresh.
+A consolidated schedule view improves operational visibility and reduces staff time spent piecing together the day’s appointments.
 
 **Acceptance Criteria**
 
-1. Given browser localStorage is unavailable, when the user attempts to save task data, then a clear persistence error is displayed.
-2. Given browser localStorage is full, when the user attempts to save task data, then a clear persistence error is displayed.
-3. Given a persistence error occurs during save, when the user views the app, then the app does not indicate that unsaved changes were persisted successfully.
-4. Given saved localStorage data is corrupted or unreadable on app load, when the app initializes, then a clear error is displayed and an empty task list is loaded without automatically overwriting the existing stored data.
+1. Given staff open the daily schedule view, when appointments exist for the selected day, then appointments are displayed grouped by provider.
+2. Given an appointment appears in the daily schedule, when staff view it, then patient contact details, reason for visit, appointment status, appointment time, and provider are visible according to access permissions.
+3. Given no appointments exist for the selected day, when staff open the daily schedule view, then an empty state is displayed.
+4. Given an appointment is booked or rescheduled online, when staff refresh or revisit the daily schedule view, then the latest appointment details are reflected.
+
+---
+
+### PRD-FR-008 — Provider Schedule Visibility
+
+- **Priority:** Should
+- **Feature:** FEAT-005
+- **Persona:** PERSONA-003
+
+**Requirement**
+
+The system shall allow providers to view their day’s appointments in the schedule view.
+
+**Business Rationale**
+
+Providers need schedule visibility to prepare for patient visits and coordinate daily work.
+
+**Acceptance Criteria**
+
+1. Given a provider has appointments scheduled for the current day, when they view their schedule, then their appointments are visible.
+2. Given appointments are grouped by provider, when a provider views the schedule, then appointments associated with other providers are not presented as that provider’s own schedule.
+3. Given an appointment is updated through online rescheduling, when the provider views the schedule, then the updated appointment time is shown.
+
+---
+
+### PRD-FR-009 — Staff Configuration of Online Scheduling Rules
+
+- **Priority:** Must
+- **Feature:** FEAT-006
+- **Persona:** PERSONA-002
+
+**Requirement**
+
+The system shall allow authorized staff to configure eligible appointment types, provider availability rules, rescheduling cutoffs, and reminder timing for online scheduling.
+
+**Business Rationale**
+
+Staff need operational control to ensure online scheduling matches clinic policies and provider availability.
+
+**Acceptance Criteria**
+
+1. Given an authorized staff user configures an appointment type as eligible for online booking, when patients view booking options, then that appointment type can be offered online.
+2. Given an authorized staff user configures a rescheduling cutoff for an appointment type, when a patient attempts rescheduling, then the configured cutoff is enforced.
+3. Given an authorized staff user configures reminder timing, when future reminders are scheduled, then the configured timing is used.
+4. Given an unauthorized user attempts to change scheduling configuration, when they submit changes, then the system denies the change.
 
 ## 9. Non-Functional Requirements
 
-### PRD-NFR-001 — Basic Accessibility
+### PRD-NFR-001 — HIPAA Security and Privacy Controls
+
+- **Category:** Compliance
+- **Priority:** Must
+
+**Requirement**
+
+The system shall support HIPAA-aligned handling of appointment-related PHI through HIPAA-eligible vendors with BAAs where required, encryption of PHI in transit and at rest, role-based access controls, and audit logs for access and booking changes.
+
+**Acceptance Criteria**
+
+1. Vendor review evidence confirms BAAs are in place for vendors handling PHI where required.
+2. Security testing or configuration review confirms PHI is encrypted in transit and at rest.
+3. Access control testing confirms staff and provider users can access only schedule information permitted for their roles.
+4. Audit log review confirms booking creation, rescheduling, reminder activity, and staff schedule access events are recorded.
+
+### PRD-NFR-002 — Accessibility
 
 - **Category:** Accessibility
 - **Priority:** Must
 
 **Requirement**
 
-The system shall support basic accessibility by providing keyboard-operable task flows, visible focus indication, and visible labels for task form fields.
+The system shall meet WCAG 2.1 AA for patient-facing and staff-facing web flows.
 
 **Acceptance Criteria**
 
-1. A user can complete create, edit, delete confirmation, status toggle, search, and filter flows using keyboard input only.
-2. Interactive controls show a visible focus state when focused by keyboard navigation.
-3. Title, description, due date, and priority inputs each have visible labels.
+1. Accessibility testing confirms booking, verification, rescheduling, and schedule-view flows satisfy WCAG 2.1 AA criteria.
+2. Keyboard-only testing confirms users can complete booking, verification, rescheduling, and schedule-view navigation without a mouse.
+3. Automated accessibility scans report no critical WCAG 2.1 AA violations in core flows.
 
----
-
-### PRD-NFR-002 — Responsive Layout
+### PRD-NFR-003 — Mobile-Responsive Web Experience
 
 - **Category:** Accessibility
 - **Priority:** Must
 
 **Requirement**
 
-The system shall provide a responsive layout usable in desktop and mobile browsers.
+The system shall provide a mobile-responsive web experience for patient booking and rescheduling without requiring a native mobile app.
 
 **Acceptance Criteria**
 
-1. Dashboard counts, task list, task form, search, and filters remain visible and usable in desktop browser testing.
-2. Dashboard counts, task list, task form, search, and filters remain visible and usable in mobile browser testing.
-3. Core flows do not require horizontal scrolling in mobile browser testing.
+1. Mobile browser testing confirms patients can complete booking and rescheduling flows on supported mobile viewport sizes.
+2. Patient booking and rescheduling flows do not require horizontal scrolling on standard mobile viewport sizes.
+3. The system does not require installation of a native mobile application to complete patient booking or rescheduling.
 
----
-
-### PRD-NFR-003 — Client-Side Privacy Boundary
-
-- **Category:** Privacy
-- **Priority:** Must
-
-**Requirement**
-
-The system shall store task data only in browser localStorage for the initial version and shall not transmit task data to a backend service, analytics service, telemetry service, or third-party storage service.
-
-**Acceptance Criteria**
-
-1. Creating, editing, deleting, searching, filtering, and refreshing tasks can be completed without a backend API call.
-2. Task data remains scoped to browser localStorage for the application origin.
-3. Task titles, descriptions, due dates, priorities, and statuses are not intentionally sent to remote services.
-
----
-
-### PRD-NFR-004 — Client-Side Interaction Performance
-
-- **Category:** Performance
-- **Priority:** Must
-
-**Requirement**
-
-The system shall complete create, edit, delete, status toggle, search, filter, sort, and dashboard count updates within 200 ms for up to 500 stored tasks on supported browsers.
-
-**Acceptance Criteria**
-
-1. Automated performance-oriented tests verify domain utility operations complete within 200 ms using a 500-task dataset.
-2. Representative E2E checks verify core interactions complete within 200 ms using a seeded 500-task dataset on supported automation targets.
-
----
-
-### PRD-NFR-005 — Supported Browser Reliability
+### PRD-NFR-004 — Scheduling Data Consistency
 
 - **Category:** Availability
 - **Priority:** Must
 
 **Requirement**
 
-The system shall load and execute core acceptance flows successfully on the latest stable Chrome, Edge, Firefox, Safari, mobile Safari, and mobile Chrome browsers.
+The system shall prevent confirmed double bookings for the same provider, appointment time, and resource when using real-time scheduling sync and slot holds.
 
 **Acceptance Criteria**
 
-1. Automated browser tests pass for supported browsers where CI automation is available.
-2. Manual acceptance checks pass for supported browser/device combinations where automation is unavailable.
+1. Conflict testing confirms two patients cannot confirm the same provider/time slot concurrently.
+2. Integration testing confirms online bookings and reschedules are reflected in the EHR/practice-management schedule.
+3. Integration testing confirms schedule changes made in the EHR/practice-management system are reflected before patients confirm online booking.
 
----
+### PRD-NFR-005 — Auditability
 
-### PRD-NFR-006 — Dependency Security Hygiene
-
-- **Category:** Security
+- **Category:** Observability
 - **Priority:** Must
 
 **Requirement**
 
-The system shall block release when high or critical dependency/CVE findings are unresolved and shall generate an SBOM during CI/CD.
+The system shall maintain audit evidence for appointment booking, rescheduling, reminder delivery activity, staff configuration changes, and schedule access events.
 
 **Acceptance Criteria**
 
-1. CI dependency scanning reports zero unresolved high or critical findings before release.
-2. CI generates an SBOM for the application dependencies/build before release.
-
----
-
-### PRD-NFR-007 — Input Rendering Safety
-
-- **Category:** Security
-- **Priority:** Must
-
-**Requirement**
-
-The system shall render user-entered task content as escaped text and shall not use unsafe raw HTML injection for task content.
-
-**Acceptance Criteria**
-
-1. User-entered title and description content renders as text rather than executable HTML.
-2. The implementation does not use dangerouslySetInnerHTML or equivalent unsafe HTML injection for task content.
+1. Given a booking or rescheduling event occurs, when audit logs are reviewed, then the event type, timestamp, actor or verified patient context, and appointment reference are present.
+2. Given staff changes scheduling rules, when audit logs are reviewed, then the configuration change event is recorded.
+3. Given staff or providers access the daily schedule, when audit logs are reviewed, then the access event is recorded according to configured audit policy.
 
 ## 10. User Journeys
 
-### JOURNEY-001 — Create and Persist a Task
+### JOURNEY-001 — Patient Books Online
 
-1. The user opens the Todo application.
-2. The user creates a task with a title and optional task details.
-3. The system saves the task, clears the create form, displays the task in the task list, and updates dashboard counts.
-4. The user refreshes the browser.
-5. The task remains visible after refresh and dashboard counts are recalculated.
+1. The patient opens the mobile-responsive scheduling portal from the clinic website.
+2. The patient selects a configured standard non-urgent appointment type.
+3. The system displays real-time available slots from the integrated schedule.
+4. The patient verifies identity using a one-time code by SMS or email.
+5. The patient confirms an available slot while the system holds it during checkout.
+6. The system creates the appointment and makes it visible in the staff schedule.
 
-**Related Requirements:** PRD-FR-001, PRD-FR-002, PRD-FR-003, PRD-FR-010, PRD-FR-011, PRD-NFR-003
+**Related Requirements:** PRD-FR-001, PRD-FR-003, PRD-FR-004, PRD-FR-005, PRD-NFR-001, PRD-NFR-002, PRD-NFR-003, PRD-NFR-004
 
-### JOURNEY-002 — Manage Task Status and Visibility
+### JOURNEY-002 — Patient Reschedules Appointment
 
-1. The user views the task list.
-2. The user marks a pending task as completed.
-3. The system updates the task status and dashboard counts.
-4. The user filters the list to Completed.
-5. The completed task is visible in the filtered result.
+1. The patient opens the rescheduling flow for an eligible appointment.
+2. The system verifies the patient using a one-time code by SMS or email.
+3. The system checks whether the appointment is before the staff-configured cutoff.
+4. The patient selects a new available time.
+5. The system updates the appointment in the integrated schedule.
+6. Staff and providers see the updated appointment time in the daily schedule.
 
-**Related Requirements:** PRD-FR-007, PRD-FR-009, PRD-FR-010
+**Related Requirements:** PRD-FR-002, PRD-FR-003, PRD-FR-004, PRD-FR-005, PRD-FR-007, PRD-FR-008, PRD-NFR-004
 
-### JOURNEY-003 — Find and Update a Task
+### JOURNEY-003 — Patient Receives Reminders
 
-1. The user searches for a task using a partial title.
-2. The system displays tasks with matching titles.
-3. The user edits a matching task.
-4. The system validates and saves the updated task.
-5. The user returns to the task list and the updated task details appear immediately.
+1. A patient has a scheduled appointment with valid reminder contact information.
+2. The system schedules reminders using staff-configured timing or the default 72-hour and 24-hour reminders.
+3. The system sends reminders through email and SMS.
+4. Reminder activity is available as audit or delivery evidence.
 
-**Related Requirements:** PRD-FR-005, PRD-FR-008, PRD-FR-002
+**Related Requirements:** PRD-FR-006, PRD-NFR-001, PRD-NFR-005
 
-### JOURNEY-004 — Delete a Task Safely
+### JOURNEY-004 — Staff Reviews Daily Schedule
 
-1. The user initiates deletion for an existing task.
-2. The system shows a deletion confirmation prompt.
-3. The user confirms deletion.
-4. The system removes the task and updates the task list and dashboard counts.
+1. Front-desk staff open the daily schedule view.
+2. The system displays appointments grouped by provider.
+3. Staff review appointment times, patient contact details, reason for visit, and appointment status.
+4. Staff use the consolidated schedule to manage the clinic day.
 
-**Related Requirements:** PRD-FR-006, PRD-FR-010, PRD-FR-011
-
-### JOURNEY-005 — Handle Persistence Problems
-
-1. The user opens or uses the app when localStorage is unavailable, full, corrupted, or unreadable.
-2. The system displays a clear persistence error.
-3. The system avoids claiming unsaved changes were persisted successfully.
-4. If stored data is corrupted or unreadable on load, the system loads an empty task list without automatically overwriting existing storage.
-
-**Related Requirements:** PRD-FR-012, PRD-NFR-003
+**Related Requirements:** PRD-FR-007, PRD-FR-009, PRD-NFR-001, PRD-NFR-005
 
 ## 11. Feature Breakdown
 
-### FEAT-001 — Task CRUD and Status Management
+### FEAT-001 — Patient Booking and Rescheduling
 
-- **Summary:** Create, view, edit, delete, validate, order, and update status for tasks.
+- **Summary:** Enables new and existing patients to book and reschedule configured standard non-urgent appointments online.
 - **Priority:** Must
-- **Related Requirements:** PRD-FR-001, PRD-FR-002, PRD-FR-003, PRD-FR-004, PRD-FR-005, PRD-FR-006, PRD-FR-007, PRD-NFR-001, PRD-NFR-002, PRD-NFR-007
-- **Expected Spec File:** `specs/FEAT-001-task-crud-and-status-management.spec.md`
+- **Related Requirements:** PRD-FR-001, PRD-FR-002, PRD-NFR-002, PRD-NFR-003
+- **Expected Spec File:** `specs/FEAT-001-patient-booking-and-rescheduling.spec.md`
 
-### FEAT-002 — Search and Filtering
+### FEAT-002 — Patient Verification
 
-- **Summary:** Search tasks by title and filter tasks by status.
+- **Summary:** Verifies patients with one-time codes sent by SMS or email before booking changes.
 - **Priority:** Must
-- **Related Requirements:** PRD-FR-008, PRD-FR-009, PRD-NFR-001, PRD-NFR-002, PRD-NFR-004
-- **Expected Spec File:** `specs/FEAT-002-search-and-filtering.spec.md`
+- **Related Requirements:** PRD-FR-003, PRD-NFR-001
+- **Expected Spec File:** `specs/FEAT-002-patient-verification.spec.md`
 
-### FEAT-003 — Dashboard Counts
+### FEAT-003 — Scheduling Integration and Conflict Handling
 
-- **Summary:** Display total, pending, completed, and overdue task counts.
+- **Summary:** Uses real-time two-way EHR/practice-management sync, slot holds, and error recovery to prevent double booking.
 - **Priority:** Must
-- **Related Requirements:** PRD-FR-010, PRD-NFR-002, PRD-NFR-004
-- **Expected Spec File:** `specs/FEAT-003-dashboard-counts.spec.md`
+- **Related Requirements:** PRD-FR-004, PRD-FR-005, PRD-NFR-004
+- **Expected Spec File:** `specs/FEAT-003-scheduling-integration-and-conflict-handling.spec.md`
 
-### FEAT-004 — Local Persistence
+### FEAT-004 — Appointment Reminders
 
-- **Summary:** Persist task data in browser localStorage and handle storage failures clearly.
+- **Summary:** Sends email and SMS reminders using staff-configurable timing with default 72-hour and 24-hour reminders.
 - **Priority:** Must
-- **Related Requirements:** PRD-FR-011, PRD-FR-012, PRD-NFR-003
-- **Expected Spec File:** `specs/FEAT-004-local-persistence.spec.md`
+- **Related Requirements:** PRD-FR-006, PRD-NFR-001, PRD-NFR-005
+- **Expected Spec File:** `specs/FEAT-004-appointment-reminders.spec.md`
 
-### FEAT-005 — Static SPA Delivery and Quality Gates
+### FEAT-005 — Daily Schedule View
 
-- **Summary:** Build, test, scan, and deploy the browser-only React/TypeScript/Vite application as static assets.
+- **Summary:** Gives staff and providers daily schedule visibility with appointment details and provider grouping.
 - **Priority:** Must
-- **Related Requirements:** PRD-NFR-005, PRD-NFR-006
-- **Expected Spec File:** `specs/FEAT-005-static-spa-delivery-and-quality-gates.spec.md`
+- **Related Requirements:** PRD-FR-007, PRD-FR-008, PRD-NFR-001, PRD-NFR-005
+- **Expected Spec File:** `specs/FEAT-005-daily-schedule-view.spec.md`
+
+### FEAT-006 — Staff Scheduling Configuration
+
+- **Summary:** Allows authorized staff to configure online appointment eligibility, rescheduling cutoffs, availability rules, and reminder timing.
+- **Priority:** Must
+- **Related Requirements:** PRD-FR-009, PRD-NFR-001, PRD-NFR-005
+- **Expected Spec File:** `specs/FEAT-006-staff-scheduling-configuration.spec.md`
 
 ## 12. Constraints
 
-- CON-001 — The product is for a small business and must remain lightweight for the initial demo.
-- CON-002 — The initial version must use browser localStorage only for task persistence.
-- CON-003 — The initial version must not require backend APIs, backend databases, paid services, or multi-device synchronization.
-- CON-004 — The initial release has no fixed date and should ship when all Must-priority requirements pass acceptance testing and release gates.
-- CON-005 — The initial product is limited to a single user on one browser/device.
-- CON-006 — Task data must not be transmitted to backend APIs, analytics services, telemetry services, or third-party storage services.
-- CON-007 — The implementation stack is a browser-only single-page application using React, TypeScript, and Vite.
-- CON-008 — Static application assets must be served over HTTPS through GitHub Pages or equivalent static hosting.
+- CON-001 — The company is a small business, so the solution should avoid unnecessary operational complexity.
+- CON-002 — The clinic operates in healthcare and must satisfy HIPAA requirements for PHI handling.
+- CON-003 — The first release must be mobile-responsive web only and must not include native mobile apps.
+- CON-004 — The first release must support only configured standard non-urgent appointment types.
+- CON-005 — The first release must not include urgent/emergency scheduling, billing/payments, clinical messaging, or telehealth.
+- CON-006 — Scheduling availability must use real-time two-way EHR/practice-management integration with slot holds or equivalent conflict prevention.
+- CON-007 — Reminder channels in the first release are email and SMS only.
+- CON-008 — Rollout must start as a pilot with one provider before broader clinic launch.
 
 ## 13. Risks
 
 | ID | Risk | Impact | Likelihood | Mitigation |
 |---|---|---|---|---|
-| RISK-001 | Browser localStorage is unavailable, full, cleared, corrupted, or blocked | High | Medium | Show clear persistence errors, avoid claiming failed saves succeeded, test failure paths, and keep data scoped to one browser/device |
-| RISK-002 | Users expect multi-device sync or accounts despite single-device scope | Medium | Medium | State scope clearly in product copy, PRD, release notes, and training/support materials |
-| RISK-003 | Browser/device differences cause inconsistent behavior | Medium | Medium | Gate release on latest stable supported browser checks with manual coverage where automation is unavailable |
-| RISK-004 | Dependency vulnerabilities delay release | Medium | Low | Run CI dependency scans, block unresolved high/critical findings, and generate SBOM evidence |
-| RISK-005 | Task content is exposed through unsafe rendering or remote logging | High | Low | Render content as escaped text, prohibit unsafe HTML injection, and prohibit task data transmission to remote services |
+| RISK-001 | EHR/practice-management integration cannot support real-time two-way sync or slot holds as expected | High | Medium | Validate integration capabilities before build commitment; define approved equivalent conflict-prevention mechanism if needed |
+| RISK-002 | HIPAA vendor, BAA, encryption, access-control, or audit requirements delay launch | High | Medium | Start vendor/security review early and make HIPAA control acceptance a release gate |
+| RISK-003 | Patients may still call if online booking supports too few appointment types | Medium | Medium | Prioritize staff configuration of the highest-volume standard non-urgent appointment types |
+| RISK-004 | SMS/email reminder delivery failures reduce patient trust | Medium | Medium | Track reminder delivery activity and expose failures for operational follow-up |
+| RISK-005 | Staff workflow adoption is limited if the daily schedule view does not match operational needs | Medium | Medium | Pilot with one provider and collect staff feedback before broader rollout |
 
 ## 14. Open Questions
 
 | ID | Question | Owner | Status | Decision/Due Date |
 |---|---|---|---|---|
-| OQ-001 | No open product questions at draft time. | Product Owner | Closed | 2026-11-12 |
+| OQ-001 | What is the exact numeric baseline for missed-call/voicemail scheduling volume and the target reduction after launch? | Product Owner | Open | TBD |
+| OQ-002 | Which EHR/practice-management system and integration interface will be used for real-time two-way scheduling sync? | Technical Owner | Open | TBD |
+| OQ-003 | Which exact standard non-urgent appointment types are eligible for online booking in the pilot? | Clinic Operations | Open | TBD |
+| OQ-004 | What are the staff-configured rescheduling cutoff values by appointment type? | Clinic Operations | Open | TBD |
+| OQ-005 | What is the target date for the one-provider pilot and broader rollout decision? | Product Owner | Open | TBD |
 
 ## 15. Release and Rollout Considerations
 
-- **Target Release:** No fixed date; release when all Must-priority requirements, automated quality gates, and required manual browser/device checks pass.
-- **Rollout Approach:** Small pilot with one internal user before broader internal use.
-- **Migration Considerations:** No migration is required for the initial release because no prior application or backend data source exists; localStorage key versioning should reserve a path for future schema migration if needed.
-- **Training/Support Considerations:** Provide lightweight guidance that task data is stored only in the user's browser/device, is not synced across devices, and may be lost if browser/application data is cleared.
+- **Target Release:** Pilot with one provider first; exact pilot date TBD.
+- **Rollout Approach:** Pilot with one provider, evaluate acceptance results and operational feedback, then plan broader clinic rollout.
+- **Migration Considerations:** Existing appointments remain in the EHR/practice-management system; online scheduling must sync with that system rather than migrate scheduling data into a separate source of truth.
+- **Training/Support Considerations:** Staff need training on daily schedule view, scheduling configuration, reminder settings, rescheduling cutoff management, booking failure handling, and HIPAA-appropriate use of patient schedule data.
 
 ## 16. Definition of Product Success
 
 The product is successful when:
 
-- A single internal user can create, view, edit, delete, search, filter, status-toggle, and track tasks without errors.
-- Saved task data persists after browser refresh in the same browser/device.
-- Dashboard counts accurately show total, pending, completed, and overdue tasks.
-- LocalStorage failure and corrupted/unreadable data states are clear to the user and do not falsely claim successful persistence.
-- Automated quality gates pass, including typecheck, lint, unit/component tests, E2E tests, production build, dependency scan, SBOM generation, and deployment smoke test.
-- Supported browser/device checks pass, with manual checks where automation is unavailable.
+- At least 30% of configured standard non-urgent appointments are booked online within 90 days of launch.
+- Patients can book and reschedule eligible appointments online without calling during office hours.
+- Staff can view the day’s schedule in one place with appointment details, patient contact details, reason for visit, status, and provider grouping.
+- Real-time scheduling sync and slot holds prevent confirmed double bookings in acceptance testing.
+- Email and SMS reminders are sent according to configured timing.
+- HIPAA-required vendor, encryption, access-control, and audit outcomes are evidenced.
 - All Must-priority requirements are accepted.
 - Required quality, security, and compliance outcomes are evidenced.
 
