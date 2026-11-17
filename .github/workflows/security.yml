@@ -1,0 +1,135 @@
+name: Security, Vulnerability, and SBOM Gates
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "18 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+env:
+  NODE_VERSION: "22"
+  EVIDENCE_DIR: evidence/security
+
+jobs:
+  security_gates:
+    name: Dependency, Secret, IaC, Container, and SBOM Gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare evidence directory
+        run: mkdir -p "${EVIDENCE_DIR}"
+
+      - name: Dependency vulnerability gate
+        run: |
+          set -euo pipefail
+          npm audit --audit-level=high --json > "${EVIDENCE_DIR}/npm-audit.json"
+
+      - name: Secret scan gate
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_SUMMARY: true
+
+      - name: Filesystem dependency and misconfiguration scan gate
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: sarif
+          output: evidence/security/trivy-fs.sarif
+
+      - name: IaC scan gate
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          quiet: true
+          soft_fail: false
+          output_format: sarif
+          output_file_path: evidence/security/checkov.sarif
+
+      - name: Detect container artifacts
+        id: container
+        run: |
+          set -euo pipefail
+          if find . -name Dockerfile -o -name '*.Dockerfile' | grep -q .; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            printf "No container build definition was present in this revision.\n" > "${EVIDENCE_DIR}/container-scan-not-applicable.txt"
+          fi
+
+      - name: Build local container image for scan
+        if: steps.container.outputs.present == 'true'
+        run: |
+          set -euo pipefail
+          docker build -t local/release-candidate:${{ github.sha }} .
+
+      - name: Container vulnerability gate
+        if: steps.container.outputs.present == 'true'
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: local/release-candidate:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: sarif
+          output: evidence/security/trivy-container.sarif
+
+      - name: Generate SBOM for custom services and deployable artifacts
+        run: |
+          set -euo pipefail
+          npm run sbom -- --omit dev
+          mv sbom.cdx.json "${EVIDENCE_DIR}/sbom.cdx.json"
+          npx --yes @cyclonedx/cyclonedx-npm --output-file "${EVIDENCE_DIR}/sbom-with-dev.cdx.json"
+
+      - name: Record risk acceptance control location
+        run: |
+          cat > "${EVIDENCE_DIR}/risk-acceptance-control.txt" <<'EOF'
+          High and critical security findings are blocked by this workflow.
+          A formal risk acceptance may be documented outside the workflow as described in infra/README.md, but this workflow contains no inline allowlist or bypass for high or critical findings.
+          EOF
+
+      - name: Upload Trivy filesystem SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: evidence/security/trivy-fs.sarif
+
+      - name: Upload Checkov SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: evidence/security/checkov.sarif
+
+      - name: Upload security evidence and SBOM
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-sbom-evidence
+          path: ${{ env.EVIDENCE_DIR }}/
+          retention-days: 365
