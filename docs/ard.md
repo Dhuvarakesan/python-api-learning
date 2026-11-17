@@ -4,637 +4,697 @@
 
 ## Document Metadata
 
-- **Product/Application:** Simple Todo Application
-- **Document ID:** ARD-TODO
+- **Product/Application:** Online Appointment Scheduling System
+- **Document ID:** ARD-APPT-SCHED
 - **Version:** 0.1
 - **Status:** Draft
-- **Architecture Owner:** TBD; see ARC-OQ-001
-- **Contributors:** TBD; see ARC-OQ-002
-- **Last Updated:** 2026-11-12
+- **Architecture Owner:** TBD
+- **Contributors:** TBD
+- **Last Updated:** 2026-11-17
 - **Reference PRD:** `PRD.md`
 
 ---
 
 ## 1. Architecture Summary
 
-The Simple Todo Application will be implemented as a browser-only, single-screen React single-page application using TypeScript, Vite, and plain scoped CSS or CSS modules. It will be statically hosted on GitHub Pages and delivered over HTTPS with no backend API, backend database, paid service dependency, user account, telemetry service, analytics service, or multi-device synchronization.
+The Online Appointment Scheduling System will use a hybrid architecture: HIPAA-eligible scheduling SaaS provides the patient, staff, and provider responsive web workflows, while lightweight custom integration services coordinate EHR/practice-management scheduling integration, conflict-safe slot holds, reminder orchestration, audit export, and observability.
 
-Task data will be stored only in browser `localStorage` under a versioned v1 key. The React application will keep current task state in built-in React state and custom hooks, while separating presentation components, task orchestration, pure domain utilities, runtime persistence validation, and the localStorage repository. The localStorage repository is the task system of record for one user on one browser/device.
+The EHR/practice-management system is the system of record for appointments, provider schedules, patient identifiers, appointment status, and appointment history. The scheduling SaaS and integration services may store only minimum necessary operational data for booking/rescheduling, configuration, delivery tracking, and audit evidence. Operational PHI outside the EHR is retained for 90 days unless required longer by a vendor workflow; audit logs are retained for 6 years.
 
-The architecture prioritizes lightweight delivery, traceability to Must-priority PRD requirements, accessibility, responsive browser support, deterministic local persistence behavior, dependency security hygiene, SBOM generation, and automated quality gates with manual browser/device checks where automation is unavailable.
+The architecture prioritizes HIPAA compliance, BAAs for vendors handling PHI, encryption in transit and at rest, role-based access controls, auditability, real-time scheduling consistency, patient self-service usability, WCAG 2.1 AA accessibility, and small-business operational simplicity.
 
 ## 2. Architecture Drivers
 
-- PRD-FR-001 — Users must be able to create tasks with required non-empty trimmed title, optional details, and default pending status.
-- PRD-FR-002 — Task form validation must prevent invalid saves and provide inline field-level errors.
-- PRD-FR-003 — Saved tasks must be visible in a task list with available task details.
-- PRD-FR-004 — Default ordering must place pending tasks before completed tasks and sort by due date within each status group.
-- PRD-FR-005 — Users must be able to edit existing task details.
-- PRD-FR-006 — Deletion must require user confirmation.
-- PRD-FR-007 — Users must be able to toggle task status between pending and completed.
-- PRD-FR-008 — Users must be able to search tasks by title using case-insensitive partial matching.
-- PRD-FR-009 — Users must be able to filter tasks by All, Pending, and Completed.
-- PRD-FR-010 — Dashboard counts must show total, pending, completed, and overdue tasks.
-- PRD-FR-011 — Task data must persist after browser refresh using browser localStorage.
-- PRD-FR-012 — The app must clearly report unavailable, full, corrupted, or unreadable localStorage persistence failures.
-- PRD-NFR-001 — Core task flows must be keyboard-operable with visible focus and labeled fields.
-- PRD-NFR-002 — The UI must be responsive and usable on desktop and mobile browsers.
-- PRD-NFR-003 — Task data must remain client-side and must not be transmitted to backend, analytics, telemetry, or third-party storage services.
-- PRD-NFR-004 — Core interactions must complete within 200 ms for up to 500 stored tasks on supported browsers.
-- PRD-NFR-005 — Core flows must pass on latest stable Chrome, Edge, Firefox, Safari, mobile Safari, and mobile Chrome.
-- PRD-NFR-006 — CI/CD must block unresolved high and critical dependency/CVE findings and generate an SBOM.
-- PRD-NFR-007 — User-entered task content must render as escaped text and must not use unsafe raw HTML injection.
-- CON-001 — The product is for a small business and must remain lightweight for the initial demo.
-- CON-002 — The initial version must use browser localStorage only for task persistence.
-- CON-003 — The initial version must not require backend APIs, backend databases, paid services, or multi-device synchronization.
-- CON-004 — The initial release has no fixed date and should ship when all Must-priority requirements pass acceptance testing and release gates.
-- CON-005 — The initial product is limited to a single user on one browser/device.
-- CON-006 — Task data must not be transmitted to backend APIs, analytics services, telemetry services, or third-party storage services.
-- CON-007 — The implementation stack is a browser-only single-page application using React, TypeScript, and Vite.
-- CON-008 — Static application assets must be served over HTTPS through GitHub Pages or equivalent static hosting.
+- PRD-FR-001 — Patients must be able to book configured standard non-urgent appointments online through a mobile-responsive web portal.
+- PRD-FR-002 — Patients must be able to reschedule eligible appointments until a staff-configured cutoff.
+- PRD-FR-003 — Booking changes require one-time-code verification by SMS or email.
+- PRD-FR-004 — Availability must use real-time two-way EHR/practice-management sync and slot holds or equivalent conflict prevention.
+- PRD-FR-005 — Booking and rescheduling failures must release holds where applicable and provide clear recovery guidance.
+- PRD-FR-006 — Appointment reminders must be sent by email and SMS using configurable timing with 72-hour and 24-hour defaults.
+- PRD-FR-007 — Staff need a daily schedule view with appointment, patient contact, reason, status, and provider grouping.
+- PRD-FR-008 — Providers should be able to view their day’s appointments.
+- PRD-FR-009 — Authorized staff must configure appointment eligibility, availability rules, cutoffs, and reminders.
+- PRD-NFR-001 — HIPAA-aligned PHI handling requires HIPAA-eligible vendors, BAAs where required, encryption, access controls, and audit logs.
+- PRD-NFR-002 — Patient-facing and staff-facing web flows must meet WCAG 2.1 AA.
+- PRD-NFR-003 — The first release must be mobile-responsive web only and require no native app.
+- PRD-NFR-004 — The system must prevent confirmed double bookings for the same provider, appointment time, and resource.
+- PRD-NFR-005 — Audit evidence must cover booking, rescheduling, reminders, configuration changes, and schedule access.
+- CON-001 — The solution must avoid unnecessary operational complexity for a small business.
+- CON-002 — The clinic operates in healthcare and must satisfy HIPAA requirements for PHI handling.
+- CON-003 — The first release must be mobile-responsive web only and must not include native mobile apps.
+- CON-004 — The first release must support only configured standard non-urgent appointment types.
+- CON-005 — The first release must not include urgent/emergency scheduling, billing/payments, clinical messaging, or telehealth.
+- CON-006 — Scheduling availability must use real-time two-way EHR/practice-management integration with slot holds or equivalent conflict prevention.
+- CON-007 — Reminder channels in the first release are email and SMS only.
+- CON-008 — Rollout must start as a pilot with one provider before broader clinic launch.
 
 ## 3. Architecture Principles
 
-1. Keep task data fully client-side for the initial version, with no backend or remote data transmission.
-2. Make localStorage behavior explicit, versioned, validated, testable, and failure-aware.
+1. Treat the EHR/practice-management system as the appointment system of record.
+2. Minimize PHI replication outside the EHR and retain only minimum necessary operational data.
 3. Reuse established repository and platform patterns where appropriate.
 4. Keep presentation, orchestration, domain, integration, and persistence concerns separated.
-5. Prefer browser-native and React-native capabilities over extra libraries unless they materially reduce risk.
-6. Treat accessibility, responsive layout, dependency hygiene, SBOM generation, and automated release evidence as release-gating architecture concerns.
+5. Prefer HIPAA-eligible managed SaaS and cloud capabilities over custom infrastructure where they reduce risk and operational burden.
+6. Make every scheduling write conflict-safe, auditable, and recoverable.
+7. Make security, accessibility, integration contracts, and auditability release gates.
 
 ## 4. System Context
 
 ### 4.1 Actors
 
-- Individual Task User — Uses the browser application to create, view, edit, delete, search, filter, persist, and track personal tasks on one browser/device.
-- Browser Runtime — Executes the React SPA, provides DOM APIs, supports keyboard/focus behavior, and exposes browser localStorage.
-- GitHub Pages — Serves compiled static application assets over HTTPS.
-- GitHub Actions — Runs install, typecheck, lint, tests, accessibility checks, dependency scanning, SBOM generation, build, deployment, and smoke checks.
-- Browser Vendors — Provide supported desktop and mobile browser runtimes.
-- npm Registry — Provides open-source package dependencies used during build and test.
+- Patient — Books and reschedules configured standard non-urgent appointments through the mobile-responsive scheduling portal.
+- Front-Desk Scheduling Staff — Views the day’s schedule and configures eligible appointment types, provider availability rules, rescheduling cutoffs, and reminder timing.
+- Provider — Views their day’s appointments.
+- Clinic Administrator — Manages user access, vendor approvals, and operational rollout decisions.
+- EHR/Practice-Management System — Owns appointment records, patient scheduling data, provider schedules, and scheduling status.
+- Scheduling SaaS — Hosts patient, staff, and provider scheduling web workflows and stores minimum necessary operational copies.
+- Integration Services — Orchestrate real-time availability, slot holds, booking writes, rescheduling writes, reminders, audit export, and observability.
+- Messaging Vendors — Send SMS and email reminders and one-time codes under HIPAA-eligible arrangements where PHI is involved.
+- Clinic SSO/Identity Provider — Authenticates staff and providers with MFA and provides role/group claims.
+- CI/CD Platform — Builds, tests, scans, produces SBOM, and deploys custom integration services.
 
 ### 4.2 External Systems
 
 | ID | System | Purpose | Interface | Owner |
 |---|---|---|---|---|
-| EXT-001 | Browser localStorage / Web Storage API | Persist task data after browser refresh for one browser/device | Web API/File-like key-value storage | Browser vendor / user browser environment |
-| EXT-002 | GitHub Pages | Serve compiled static SPA assets over HTTPS | File | Engineering / GitHub |
-| EXT-003 | GitHub Actions | Run CI/CD quality gates and deploy static artifacts | Event | Engineering / GitHub |
-| EXT-004 | Supported web browsers | Provide runtime environment for the SPA on desktop and mobile | Web runtime | Browser vendors |
-| EXT-005 | npm Registry | Supply JavaScript dependencies for build, test, and tooling | Package registry | npm / package maintainers |
+| EXT-001 | EHR/Practice-Management System | System of record for appointments, patient scheduling data, provider schedules, and appointment status | REST/FHIR/vendor API | Clinic / EHR vendor |
+| EXT-002 | HIPAA-Eligible Scheduling SaaS | Patient, staff, and provider scheduling workflows; operational scheduling configuration | REST/Event/Web | Scheduling SaaS vendor |
+| EXT-003 | Clinic SSO/Identity Provider | Staff/provider authentication, MFA, role/group claims | OIDC/SAML | Clinic IT / IdP vendor |
+| EXT-004 | SMS Vendor | One-time codes and appointment reminder SMS delivery | REST/Event | Messaging vendor |
+| EXT-005 | Email Vendor | One-time codes and appointment reminder email delivery | REST/Event/SMTP API | Messaging vendor |
+| EXT-006 | HIPAA-Eligible Cloud Runtime | Runs custom integration services and observability components | Container/Serverless | Cloud provider / Engineering |
+| EXT-007 | Central Observability Platform | HIPAA-safe logs, metrics, traces, alerts, and audit exports | Event/REST | Engineering / Observability vendor |
+| EXT-008 | Clinic Website | Entry point or embedded placement for patient scheduling portal | Web | Clinic / Website vendor |
 
 ## 5. Technology Stack
 
 | Layer | Technology | Version/Constraint | Rationale |
 |---|---|---|---|
-| Frontend | React with TypeScript and Vite | Current stable versions selected during implementation; must support latest stable Chrome, Edge, Firefox, Safari, mobile Safari, and mobile Chrome | Mandated by PRD; supports typed component-based SPA development and static builds |
-| Backend | None | Backend APIs and backend databases are prohibited for task data flows | Satisfies client-side privacy boundary and lightweight demo constraints |
-| Data | Browser localStorage / Web Storage API | Browser localStorage only; versioned v1 storage key; task data scoped to one browser/device | Satisfies refresh persistence without backend storage or paid services |
-| Hosting | GitHub Pages | HTTPS static hosting compatible with Vite build artifacts | Low operational overhead and selected first-release static host |
-| CI/CD | GitHub Actions | Runs release gates and deploys GitHub Pages artifact | Git-based automation aligned to hosting platform |
-| State Management | React built-in state and custom hooks | No external state management library | Keeps the app lightweight while meeting single-screen state needs |
-| Styling | Plain scoped CSS or CSS modules | No paid UI kit | Minimizes dependencies and supports responsive/accessibility requirements |
-| Testing | Vitest, React Testing Library, Playwright, axe accessibility checks | Must support unit/component/E2E/accessibility gates | Provides fast domain/persistence tests and user-flow evidence |
-| Security Tooling | `npm audit` and CycloneDX npm SBOM generation | High and critical CVEs block release; SBOM required | Meets PRD dependency security and SBOM requirements |
+| Frontend | Scheduling SaaS-hosted responsive web screens configured or embedded on clinic website | Must meet WCAG 2.1 AA and mobile-responsive requirements; no native app | Reduces custom UI operational burden while supporting patient/staff/provider workflows |
+| Backend | Lightweight custom integration services | Platform-agnostic container or serverless services on a HIPAA-eligible cloud runtime; exact cloud TBD | Provides controlled EHR, messaging, audit, and observability orchestration without overbuilding a full custom product |
+| Data | EHR/practice-management system plus minimum necessary SaaS/cloud operational stores | EHR is system of record; operational PHI outside EHR retained 90 days; audit logs retained 6 years | Preserves scheduling authority and minimizes PHI replication |
+| Hosting | HIPAA-eligible scheduling SaaS and HIPAA-eligible cloud runtime | BAAs required where vendors handle PHI; encryption in transit and at rest required | Satisfies HIPAA posture while keeping operations manageable for a small clinic |
+| Identity | Clinic SSO/OIDC with MFA for staff/providers; patient OTP by SMS/email | Staff/provider RBAC required; patient full accounts out of scope | Balances security with patient self-service simplicity |
+| Messaging | HIPAA-eligible SMS and email vendors with BAAs where required | Email and SMS only in first release | Meets reminder and OTP requirements while excluding voice calls |
+| CI/CD | Git-based CI/CD pipeline | Runs tests, lint/build, scans, SBOM, IaC validation, and deployment | Provides repeatable release evidence and rollback support |
+| Infrastructure | Infrastructure as Code | Tool TBD by selected cloud/runtime | Ensures reproducible environments and controlled PHI access boundaries |
 
 ## 6. Logical Architecture
 
 ### 6.1 Components
 
-#### COMP-001 — App Shell
+#### COMP-001 — Scheduling SaaS Web Experience
 
-- **Responsibility:** Compose dashboard, task form, search/filter controls, task list, delete dialog, application-level persistence errors, and single-screen SPA layout.
-- **Inputs:** Browser load event, persisted tasks from COMP-008, user interactions from child components.
-- **Outputs:** Rendered SPA, delegated task commands, visible error banners, updated UI state.
-- **Dependencies:** COMP-002, COMP-003, COMP-004, COMP-005, COMP-006, COMP-007, COMP-008.
-- **Repository Area:** `src/App.tsx`, `src/features/tasks/`
+- **Responsibility:** Host/configure mobile-responsive patient booking, patient rescheduling, staff daily schedule view, provider schedule view, and staff scheduling configuration screens.
+- **Inputs:** Patient selections, OTP verification status, staff/provider authenticated sessions, scheduling configuration, availability data, appointment updates.
+- **Outputs:** Booking/rescheduling requests, schedule views, configuration changes, reminder settings, audit events.
+- **Dependencies:** EXT-002, COMP-002, COMP-003, COMP-004, COMP-005, EXT-003, EXT-008.
+- **Repository Area:** `TBD: SaaS configuration repository or vendor admin export`.
 
-#### COMP-002 — Task Form Component
+#### COMP-002 — API Gateway and Integration Edge
 
-- **Responsibility:** Capture create/edit inputs for title, description, due date, and priority; show inline validation errors; clear create form after successful create.
-- **Inputs:** User-entered task fields, existing task values for edit mode, validation results from COMP-007.
-- **Outputs:** Create or update commands with normalized task input.
-- **Dependencies:** COMP-007.
-- **Repository Area:** `src/features/tasks/components/TaskForm.tsx`
+- **Responsibility:** Expose controlled APIs/webhooks between the scheduling SaaS, EHR/practice-management system, messaging vendors, and internal integration services.
+- **Inputs:** SaaS webhooks/API calls, EHR callbacks, messaging delivery callbacks, authenticated service requests.
+- **Outputs:** Routed service requests, normalized events, authentication/authorization decisions, rate-limited integration traffic.
+- **Dependencies:** COMP-003, COMP-004, COMP-005, COMP-006, EXT-001, EXT-002, EXT-004, EXT-005.
+- **Repository Area:** `services/integration-edge/`.
 
-#### COMP-003 — Task List Component
+#### COMP-003 — Scheduling Orchestration Service
 
-- **Responsibility:** Display ordered task rows, empty/no-results states, status toggle actions, edit actions, and delete initiation.
-- **Inputs:** Visible task collection, task commands, current search/filter state.
-- **Outputs:** Status toggle, edit, and delete-request commands.
-- **Dependencies:** COMP-006, COMP-007.
-- **Repository Area:** `src/features/tasks/components/TaskList.tsx`
+- **Responsibility:** Coordinate availability reads, slot holds, booking confirmation, rescheduling, hold release, failure recovery, and idempotent scheduling writes.
+- **Inputs:** Appointment type, provider/resource, desired time slot, patient verification context, rescheduling cutoff rules, EHR availability responses.
+- **Outputs:** Held slot references, confirmed appointment references, rescheduled appointment references, patient-facing errors, audit events.
+- **Dependencies:** COMP-002, COMP-006, COMP-008, EXT-001, EXT-002.
+- **Repository Area:** `services/scheduling-orchestration/`.
 
-#### COMP-004 — Accessible Delete Confirmation Dialog
+#### COMP-004 — Reminder and OTP Orchestration Service
 
-- **Responsibility:** Confirm destructive delete operations with accessible in-app focus management and keyboard operation.
-- **Inputs:** Selected task pending deletion and user confirmation/cancel actions.
-- **Outputs:** Delete-confirmed or delete-cancelled command.
-- **Dependencies:** COMP-001.
-- **Repository Area:** `src/features/tasks/components/DeleteTaskDialog.tsx`
+- **Responsibility:** Coordinate one-time-code delivery and appointment reminder scheduling through HIPAA-eligible SMS/email vendors or scheduling SaaS capabilities.
+- **Inputs:** Patient contact method, verification request, appointment reminder schedule, delivery callbacks, reminder configuration.
+- **Outputs:** OTP send requests, reminder send requests, delivery status events, failed-delivery audit evidence.
+- **Dependencies:** COMP-002, COMP-006, COMP-008, EXT-004, EXT-005.
+- **Repository Area:** `services/messaging-orchestration/`.
 
-#### COMP-005 — Dashboard Component
+#### COMP-005 — Schedule View and Configuration Adapter
 
-- **Responsibility:** Display total, pending, completed, and overdue task counts.
-- **Inputs:** Saved task collection and current local date.
-- **Outputs:** Accessible dashboard count cards or summary.
-- **Dependencies:** COMP-007.
-- **Repository Area:** `src/features/tasks/components/Dashboard.tsx`
+- **Responsibility:** Normalize staff/provider schedule view data and staff configuration data between the SaaS workflows and EHR/practice-management system.
+- **Inputs:** Staff/provider role claims, schedule date/provider filters, appointment type configuration, availability rules, cutoff rules, reminder timing.
+- **Outputs:** Provider-grouped schedule data, configuration updates, access audit events.
+- **Dependencies:** COMP-002, COMP-006, COMP-008, EXT-001, EXT-002, EXT-003.
+- **Repository Area:** `services/schedule-config-adapter/`.
 
-#### COMP-006 — Search and Filter Component
+#### COMP-006 — EHR Integration Adapter
 
-- **Responsibility:** Capture title search term and selected status filter for All, Pending, and Completed.
-- **Inputs:** User search text and status filter selection.
-- **Outputs:** Search/filter state updates.
-- **Dependencies:** COMP-007.
-- **Repository Area:** `src/features/tasks/components/SearchFilter.tsx`
+- **Responsibility:** Encapsulate EHR/practice-management integration using FHIR Scheduling APIs where supported and vendor-specific APIs where required for holds and booking writes.
+- **Inputs:** Availability queries, hold requests, booking requests, rescheduling requests, appointment read requests, provider/resource mappings.
+- **Outputs:** Normalized availability, hold confirmations, appointment IDs, conflict responses, EHR error mappings.
+- **Dependencies:** EXT-001, COMP-008.
+- **Repository Area:** `services/ehr-adapter/`.
 
-#### COMP-007 — Task Domain Utilities
+#### COMP-007 — Operational Data Store
 
-- **Responsibility:** Provide pure functions for task validation, normalization, ordering, title search, status filtering, overdue detection, dashboard count calculation, ID generation strategy wrapping, timestamp normalization, and v1 payload validation helpers.
-- **Inputs:** Task input, task collection, search term, status filter, current local date, raw parsed payloads.
-- **Outputs:** Validation results, normalized task values, sorted/filtered task collections, dashboard counts, overdue flags, validated v1 collections.
-- **Dependencies:** Browser `crypto.randomUUID` where available for ID generation through an adapter.
-- **Repository Area:** `src/features/tasks/domain/`
+- **Responsibility:** Store minimum necessary operational data, idempotency keys, hold state, reminder scheduling state, delivery status, integration state, and non-authoritative appointment references.
+- **Inputs:** Orchestration state, vendor callbacks, delivery status events, audit references.
+- **Outputs:** State lookups, retry records, retention-limited operational records.
+- **Dependencies:** COMP-003, COMP-004, COMP-005, COMP-008.
+- **Repository Area:** `infra/operational-data-store/`.
 
-#### COMP-008 — localStorage Task Repository
+#### COMP-008 — Audit and Compliance Event Service
 
-- **Responsibility:** Read, validate, write, and remove serialized task collections in browser localStorage; detect unavailable, full, corrupted, or unreadable storage errors.
-- **Inputs:** Task collection from orchestration, browser localStorage state, v1 storage key.
-- **Outputs:** Persisted task collection, loaded task collection, structured persistence/load errors.
-- **Dependencies:** EXT-001, COMP-007.
-- **Repository Area:** `src/features/tasks/persistence/localStorageTaskRepository.ts`
+- **Responsibility:** Capture immutable audit events for booking, rescheduling, reminder activity, configuration changes, schedule access, integration failures, and security-relevant events.
+- **Inputs:** Audit events from SaaS, integration services, EHR integration, staff access, provider access, messaging delivery callbacks.
+- **Outputs:** Centralized audit log records, audit exports, compliance review evidence.
+- **Dependencies:** EXT-007, COMP-007.
+- **Repository Area:** `services/audit-compliance/`.
 
-#### COMP-009 — Task State Hook / Orchestrator
+#### COMP-009 — Observability and Alerting
 
-- **Responsibility:** Coordinate React state, task commands, domain utilities, persistence writes, persistence errors, and derived visible views without external state libraries.
-- **Inputs:** User commands from components, loaded task data, domain utility results.
-- **Outputs:** Updated in-memory task state, persisted task collection, derived dashboard/search/filter views.
-- **Dependencies:** COMP-007, COMP-008.
-- **Repository Area:** `src/features/tasks/hooks/useTasks.ts`
+- **Responsibility:** Provide HIPAA-safe logs, metrics, traces, dashboards, and alerts for custom integration services and imported vendor audit/status events.
+- **Inputs:** Application logs, metrics, traces, SaaS/EHR/messaging status events, CI/CD deployment events.
+- **Outputs:** Alerts, dashboards, incident diagnostics, uptime/performance evidence.
+- **Dependencies:** EXT-007, all custom services.
+- **Repository Area:** `infra/observability/`.
 
-#### COMP-010 — Static Build Artifact
+#### COMP-010 — CI/CD and Infrastructure Automation
 
-- **Responsibility:** Package the React/Vite application into static assets for GitHub Pages.
-- **Inputs:** Source code, Vite configuration, GitHub Pages base path configuration.
-- **Outputs:** Static HTML, JavaScript, CSS, and asset files.
-- **Dependencies:** EXT-002, EXT-003, EXT-005.
-- **Repository Area:** `dist/`
+- **Responsibility:** Build, test, scan, generate SBOM, validate IaC, deploy custom integration services, and support rollback across environments.
+- **Inputs:** Source code, IaC definitions, SaaS configuration artifacts where exportable, test suites, security policies.
+- **Outputs:** Deployable artifacts, SBOM, scan reports, test evidence, deployed infrastructure, rollback artifacts.
+- **Dependencies:** EXT-006, EXT-007.
+- **Repository Area:** `.github/workflows/`, `infra/`, `services/`.
 
 ### 6.2 Data Flow
 
-1. The Individual Task User loads the app from EXT-002 in a supported browser.
-2. COMP-001 initializes COMP-009, and COMP-009 requests saved tasks from COMP-008.
-3. COMP-008 reads the JSON payload from EXT-001 under the v1 storage key and asks COMP-007 to validate the parsed v1 task collection.
-4. COMP-008 returns a valid task collection, an empty collection when no payload exists, or a structured load error when data is unavailable, corrupted, or unreadable.
-5. COMP-001 displays a persistence error banner when load/write errors occur and passes task state to COMP-002 through COMP-006.
-6. The user submits create/edit input through COMP-002.
-7. COMP-009 uses COMP-007 to validate and normalize task input, generate or preserve identifiers, update ISO timestamps, and calculate derived state.
-8. After every successful create, edit, delete, or status toggle, COMP-009 asks COMP-008 to write the full task collection immediately to localStorage.
-9. COMP-008 writes the serialized v1 task collection to EXT-001 or returns a structured persistence error; the UI must not claim successful persistence when writes fail.
-10. COMP-007 derives ordered, searched, filtered, overdue, and counted views from saved in-memory task state.
-11. COMP-004 confirms deletion before COMP-009 removes the task and triggers persistence.
-12. On browser refresh, the flow restarts from localStorage and dashboard counts are recalculated from persisted task data.
+1. Patient opens the scheduling portal from the clinic website through EXT-008 and COMP-001.
+2. COMP-001 requests available configured standard non-urgent slots through COMP-002 and COMP-003.
+3. COMP-003 asks COMP-006 to query EXT-001 for real-time availability using FHIR Scheduling APIs where supported or vendor APIs where required.
+4. COMP-006 normalizes availability and returns current slots to COMP-003, which returns them to COMP-001.
+5. Patient selects a slot and completes OTP verification through COMP-004 and EXT-004 or EXT-005.
+6. COMP-003 places a temporary hold or equivalent conflict-prevention reservation through COMP-006 and EXT-001.
+7. Patient confirms booking or rescheduling; COMP-003 performs an idempotent write through COMP-006 to EXT-001.
+8. EXT-001 confirms the appointment or returns a conflict/error; COMP-003 releases holds on failure and returns clear recovery guidance through COMP-001.
+9. COMP-004 schedules default or configured reminders through HIPAA-eligible email/SMS vendors or scheduling SaaS delivery functions.
+10. Staff and providers authenticate through EXT-003 and access schedule/configuration screens through COMP-001.
+11. COMP-005 retrieves provider-grouped daily schedule data from EXT-001 through COMP-006 and applies RBAC from EXT-003 claims.
+12. COMP-008 records audit events for booking, rescheduling, reminders, configuration changes, schedule access, and integration failures.
+13. COMP-009 receives HIPAA-safe logs, metrics, traces, and alerts from custom services and status/audit exports from vendors where available.
 
 ## 7. Architecture Decisions
 
-### ARD-DEC-001 — Use React, TypeScript, and Vite for the Static SPA
+### ARD-DEC-001 — Use Hybrid SaaS Plus Lightweight Integration Services
 
 - **Status:** Accepted
-- **Related Requirements:** PRD-FR-001, PRD-FR-003, PRD-FR-005, PRD-FR-007, PRD-FR-008, PRD-FR-009, PRD-FR-010, PRD-NFR-001, PRD-NFR-002, PRD-NFR-005, PRD-NFR-007
+- **Related Requirements:** PRD-FR-001, PRD-FR-002, PRD-FR-007, PRD-FR-008, PRD-FR-009, PRD-NFR-001, PRD-NFR-003
 
 **Decision**
 
-Implement the Todo application as a React single-page application using TypeScript and Vite, compiled to static assets.
+Use HIPAA-eligible scheduling SaaS for patient, staff, and provider scheduling workflows, supplemented by lightweight custom integration services for EHR integration, reminders, audit export, and observability.
 
 **Rationale**
 
-The PRD mandates React, TypeScript, and Vite. This stack supports accessible component composition, typed task models, fast builds, and static hosting on GitHub Pages.
+A small healthcare clinic needs HIPAA-ready scheduling capabilities without unnecessary custom UI and platform complexity. Custom services are still needed to normalize EHR integration, handle conflict-safe orchestration, and produce operational/audit evidence.
 
 **Consequences**
 
-- Enables typed client-side development and automated unit/component testing.
-- Produces static assets that do not require backend compute.
-- Requires Node-based build tooling in GitHub Actions.
+- Reduces custom application surface area and time-to-pilot risk.
+- Requires vendor due diligence, BAAs, SaaS configuration management, and contract clarity.
+- Creates dependency on SaaS capabilities for accessibility, workflow configuration, and audit export.
 
 **Alternatives Considered**
 
-- Vanilla HTML, CSS, and JavaScript — Rejected because the approved PRD mandates React, TypeScript, and Vite.
-- Vue or Svelte with TypeScript and Vite — Rejected because the approved PRD mandates React.
+- Fully custom web application — Rejected because it increases operational burden and HIPAA implementation scope for a small clinic.
+- EHR portal only — Not selected because the exact EHR capability is unsettled and may not satisfy all workflow and reminder needs.
+- Scheduling SaaS only — Not selected because EHR integration, conflict handling, audit export, and observability need explicit architecture control.
 
-### ARD-DEC-002 — Use Browser localStorage as the Task System of Record
+### ARD-DEC-002 — Treat EHR/Practice-Management as Scheduling System of Record
 
 - **Status:** Accepted
-- **Related Requirements:** PRD-FR-011, PRD-FR-012, PRD-NFR-003
+- **Related Requirements:** PRD-FR-004, PRD-FR-005, PRD-FR-007, PRD-FR-008, PRD-NFR-004
 
 **Decision**
 
-Persist the complete v1 task collection in browser localStorage and treat localStorage as the system of record for the initial version.
+The EHR/practice-management system is the authoritative source for appointments, provider/resource schedules, patient scheduling identifiers, and appointment status.
 
 **Rationale**
 
-The PRD requires persistence after browser refresh while prohibiting backend APIs, backend databases, paid services, and multi-device synchronization. localStorage satisfies the single-browser/device scope with minimal operational complexity.
+The PRD requires real-time two-way scheduling sync and double-booking prevention. Keeping appointment authority in the EHR avoids conflicting appointment histories and aligns online scheduling with existing clinic operations.
 
 **Consequences**
 
-- Tasks persist after refresh in the same browser profile.
-- Tasks are not available across browsers, devices, browser profiles, or after cleared browser/application data.
-- Persistence and corruption failure handling must be explicit and user-visible.
+- Online scheduling depends on EHR API availability and semantics.
+- Custom services must handle EHR conflicts, retries, and error mapping.
+- No migration of existing appointments is required for the first release.
 
 **Alternatives Considered**
 
-- Backend database with API — Rejected because backend APIs and backend databases are out of scope.
-- IndexedDB — Rejected because PRD constraints specify browser localStorage only.
-- Session storage — Rejected because it does not satisfy the persistence requirement as directly as localStorage.
+- Scheduling SaaS as system of record — Rejected because EHR remains the clinic operational scheduling authority.
+- Dual system of record — Rejected because it increases reconciliation and double-booking risk.
+- Custom database as system of record — Rejected because it duplicates clinical scheduling authority unnecessarily.
 
-### ARD-DEC-003 — Separate UI Components, State Orchestration, Domain Utilities, and Persistence
+### ARD-DEC-003 — Use FHIR Scheduling APIs Where Supported With Vendor API Fallback
 
 - **Status:** Accepted
-- **Related Requirements:** PRD-FR-001, PRD-FR-002, PRD-FR-004, PRD-FR-008, PRD-FR-009, PRD-FR-010, PRD-FR-012, PRD-NFR-004
+- **Related Requirements:** PRD-FR-004, PRD-FR-005, PRD-NFR-004
 
 **Decision**
 
-Organize the task feature into React presentation components, a task state/orchestration hook, pure task domain utilities, and a localStorage repository.
+Use FHIR Scheduling APIs where supported by the EHR/practice-management system, with vendor-specific API fallback for slot holds, booking writes, rescheduling writes, and conflict semantics not fully covered by FHIR.
 
 **Rationale**
 
-Validation, ordering, search, filtering, counts, performance, and persistence failure behavior must be testable and traceable to acceptance criteria. Separation keeps business rules outside presentation components and enables focused tests.
+The exact EHR/practice-management system is not yet identified. FHIR provides a standards-aligned baseline, while vendor APIs may be required for real-time holds and confirmed writes.
 
 **Consequences**
 
-- Domain and persistence behavior can be covered with fast Vitest tests.
-- UI components remain focused on rendering and user interaction.
-- Slightly more structure than a single-file demo, but lower regression risk.
+- Integration adapter must isolate EHR-specific behavior behind normalized contracts.
+- Contract tests are required against sandbox or mocked EHR interfaces.
+- Exact endpoint and resource mapping remain open until EHR selection/integration discovery.
 
 **Alternatives Considered**
 
-- Single React component containing all logic — Rejected because it weakens maintainability and test isolation.
-- Deep enterprise layering — Rejected because it adds unnecessary ceremony for a lightweight demo.
+- Vendor-specific APIs only — Rejected as the default because it reduces portability before EHR identification.
+- HL7 v2 only — Not selected because patient-facing real-time availability/holds typically need request/response APIs.
+- Manual import/export — Rejected because it cannot satisfy real-time sync or double-booking prevention.
 
-### ARD-DEC-004 — Use React Built-In State and Custom Hooks Only
+### ARD-DEC-004 — Use Clinic SSO/OIDC With MFA for Staff and Providers
 
 - **Status:** Accepted
-- **Related Requirements:** PRD-FR-001, PRD-FR-005, PRD-FR-007, PRD-FR-008, PRD-FR-009, PRD-FR-010, PRD-NFR-004
+- **Related Requirements:** PRD-FR-007, PRD-FR-008, PRD-FR-009, PRD-NFR-001, PRD-NFR-005
 
 **Decision**
 
-Manage application state with React built-in state and custom hooks, without Redux, Zustand, or another external state management library.
+Staff and provider access must use clinic SSO/OIDC or equivalent federated identity with MFA and role-based authorization.
 
 **Rationale**
 
-The application is single-user, single-screen, and lightweight. React state and custom hooks are sufficient for task state, derived views, persistence errors, and form/edit state while reducing dependencies and security surface area.
+Staff and providers access appointment-related PHI and configuration functions. Federated identity centralizes account lifecycle, MFA enforcement, and role claims.
 
 **Consequences**
 
-- Reduces bundle complexity and dependency scanning scope.
-- Keeps state management easy to reason about for the first release.
-- Future multi-screen or multi-user needs may require reevaluation.
+- Scheduling SaaS and custom services must support SSO integration and role/group mapping.
+- Break-glass or local fallback accounts, if any, must be documented and audited.
+- Patient authentication remains OTP-based and separate from staff/provider SSO.
 
 **Alternatives Considered**
 
-- Redux Toolkit — Rejected as unnecessary for the initial single-screen app.
-- Zustand — Viable, but rejected to avoid adding dependency surface for limited state needs.
+- SaaS-native login only — Not selected because it fragments identity governance unless clinic SSO is unavailable.
+- Username/password without SSO — Rejected due to weaker lifecycle and MFA governance.
+- EHR embedded auth only — Not selected because scheduling SaaS workflows may not be embedded in the EHR.
 
-### ARD-DEC-005 — Use Hand-Written v1 Runtime Validation for Persisted Payloads
+### ARD-DEC-005 — Minimize PHI Outside the EHR and Retain Operational Data for 90 Days
 
 - **Status:** Accepted
-- **Related Requirements:** PRD-FR-002, PRD-FR-012, PRD-NFR-006
+- **Related Requirements:** PRD-NFR-001, PRD-NFR-005
 
 **Decision**
 
-Validate parsed localStorage payloads with a small hand-written runtime validator for the v1 task collection schema.
+Store only minimum necessary operational PHI outside the EHR. Retain operational data for 90 days and retain audit logs for 6 years.
 
 **Rationale**
 
-Persisted localStorage data can be corrupted, unreadable, or manually modified. A hand-written validator is sufficient for the small schema and avoids adding a validation library dependency.
+The system must meet HIPAA expectations while supporting reminders, troubleshooting, and auditability. Limiting replicated PHI reduces breach impact and operational risk.
 
 **Consequences**
 
-- Corrupted data can be detected deterministically.
-- Dependency footprint remains small.
-- Schema changes require updating validator tests alongside code.
+- Data models must distinguish operational data from audit logs.
+- Retention automation is required for operational stores.
+- Audit logs must avoid unnecessary PHI while retaining enough event evidence.
 
 **Alternatives Considered**
 
-- Zod — Rejected because the schema is small and dependency minimization is preferred.
-- TypeScript-only typing after `JSON.parse` — Rejected because it does not validate runtime payloads.
+- Retain full appointment history in scheduling SaaS indefinitely — Rejected because it expands PHI footprint unnecessarily.
+- Delete all operational data immediately after appointment completion — Not selected because it may weaken troubleshooting and delivery evidence.
+- Store no PHI outside EHR — Not selected because OTP, reminders, and SaaS workflows require minimum necessary operational data.
 
-### ARD-DEC-006 — Deploy Through GitHub Actions to GitHub Pages
+### ARD-DEC-006 — Platform-Agnostic HIPAA-Eligible Container/Serverless Runtime
 
 - **Status:** Accepted
-- **Related Requirements:** PRD-NFR-005, PRD-NFR-006
+- **Related Requirements:** PRD-NFR-001, PRD-NFR-005
 
 **Decision**
 
-Use GitHub Actions to install dependencies, typecheck, lint, test, scan, generate SBOM, build, deploy to GitHub Pages, and run a deployment smoke check.
+Implement custom integration services as platform-agnostic containerized or serverless workloads deployable to a HIPAA-eligible cloud runtime. The exact cloud provider remains TBD.
 
 **Rationale**
 
-GitHub Pages is the selected static host and GitHub Actions is the selected CI/CD platform. The pairing provides lightweight static deployment and repeatable release evidence.
+Cloud choice is unsettled. Defining runtime constraints preserves portability while keeping HIPAA controls, deployment automation, and observability explicit.
 
 **Consequences**
 
-- Deployments are reproducible from source control.
-- Rollback can be performed by redeploying a prior commit/build.
-- CI configuration must include GitHub Pages base path handling for Vite.
+- IaC must abstract provider-specific services where practical.
+- Cloud-native choices must be revisited after provider selection.
+- Open architecture question remains for final cloud/runtime selection.
 
 **Alternatives Considered**
 
-- Manual deployment — Rejected because it weakens repeatability and release evidence.
-- Netlify or Cloudflare Pages — Viable static hosts, but GitHub Pages was selected for the first release.
+- Select AWS/Azure/GCP now — Deferred because the user selected platform-agnostic requirements.
+- Vendor-managed integration only — Rejected because custom orchestration and observability controls are required.
 
-### ARD-DEC-007 — Gate Release With Vitest, React Testing Library, Playwright, axe, npm audit, and CycloneDX
+### ARD-DEC-007 — Centralize HIPAA-Safe Observability and Audit Exports
 
 - **Status:** Accepted
-- **Related Requirements:** PRD-FR-001, PRD-FR-002, PRD-FR-003, PRD-FR-004, PRD-FR-005, PRD-FR-006, PRD-FR-007, PRD-FR-008, PRD-FR-009, PRD-FR-010, PRD-FR-011, PRD-FR-012, PRD-NFR-001, PRD-NFR-002, PRD-NFR-004, PRD-NFR-005, PRD-NFR-006, PRD-NFR-007
+- **Related Requirements:** PRD-FR-005, PRD-FR-006, PRD-NFR-001, PRD-NFR-005
 
 **Decision**
 
-Require Vitest and React Testing Library for unit/component tests, Playwright for end-to-end acceptance flows and supported browser automation, axe accessibility checks for core screens, `npm audit` for dependency scanning, and CycloneDX npm SBOM generation.
+Use centralized HIPAA-safe logs, metrics, alerts, traces for integration services, and immutable audit event export from SaaS/EHR where available.
 
 **Rationale**
 
-The approved PRD requires automated quality gates, E2E acceptance evidence, accessibility checks, 80% domain/persistence utility coverage, zero unresolved high/critical dependency findings, and SBOM generation.
+The clinic needs evidence for incidents, delivery failures, access review, booking changes, and HIPAA-aligned auditability without exposing unnecessary PHI in logs.
 
 **Consequences**
 
-- Critical flows are validated consistently in CI/CD.
-- Security and SBOM evidence is available before release.
-- Manual browser/device checks remain required where automation is unavailable.
+- Logging and tracing must be PHI-minimized by design.
+- Vendors must be evaluated for audit export capabilities.
+- Observability platform must be HIPAA-eligible where it receives PHI or PHI-adjacent events.
 
 **Alternatives Considered**
 
-- Manual testing only — Rejected because the PRD requires automated release evidence.
-- Playwright only — Rejected because unit/domain/persistence tests provide faster targeted feedback.
-- Snyk — Viable, but `npm audit` and CycloneDX were selected for a no-paid-service first release.
-
-### ARD-DEC-008 — Use a Single-Screen SPA With No Client Router
-
-- **Status:** Accepted
-- **Related Requirements:** PRD-FR-001, PRD-FR-003, PRD-FR-008, PRD-FR-009, PRD-FR-010, PRD-NFR-002
-
-**Decision**
-
-Implement the app as a single-screen SPA with no client-side router and configure the Vite base path for GitHub Pages.
-
-**Rationale**
-
-The PRD does not require multi-page navigation. Avoiding a router reduces dependency surface, simplifies GitHub Pages deployment, and keeps keyboard/accessibility testing focused.
-
-**Consequences**
-
-- Static hosting is simpler because no route fallback is required.
-- Deep links to task detail pages are not supported in the initial release.
-- Future multi-page features may introduce routing later.
-
-**Alternatives Considered**
-
-- React Router hash routing — Rejected because no separate routes are needed.
-- React Router browser history routing — Rejected because it adds deployment fallback complexity for GitHub Pages.
-
-### ARD-DEC-009 — Use Accessible In-App Delete Confirmation Dialog
-
-- **Status:** Accepted
-- **Related Requirements:** PRD-FR-006, PRD-NFR-001
-
-**Decision**
-
-Implement deletion confirmation as an accessible in-app dialog with keyboard support and focus management.
-
-**Rationale**
-
-The PRD requires deletion confirmation and keyboard-operable flows. An in-app dialog provides consistent styling, testability, and accessible focus control.
-
-**Consequences**
-
-- Requires focus trap/return behavior and accessible labels/descriptions.
-- Avoids inconsistent native browser confirm behavior across browsers.
-- Adds a small UI component but improves test coverage and user experience.
-
-**Alternatives Considered**
-
-- Native `window.confirm` — Rejected because it is less controllable and harder to test consistently.
-- Inline confirmation controls — Viable, but a dialog better supports clear destructive action confirmation.
+- Vendor dashboards only — Rejected because they fragment evidence and slow incident response.
+- Audit-only logging — Rejected because performance/reliability targets require operational telemetry.
 
 ## 8. API and Integration Architecture
 
-### ARD-API-001 — Browser localStorage Task Persistence Interface
+### ARD-API-001 — Patient Scheduling Web Interface
 
-- **Type:** File
-- **Operation/Topic:** `localStorage.getItem('todo.tasks.v1')`, `localStorage.setItem('todo.tasks.v1', serializedTasks)`, `localStorage.removeItem('todo.tasks.v1')`
-- **Provider:** COMP-008
-- **Consumers:** COMP-009, COMP-001
-- **Authentication:** None; scoped to the user’s browser profile and application origin
-- **Versioning:** Storage key includes version suffix `v1`; future incompatible schema changes must use a new key or explicit migration routine
-
-**Request/Input Contract**
-
-The persisted payload is a JSON-serialized v1 task collection stored under `todo.tasks.v1`.
-
-Task fields:
-
-- `id`: stable client-generated string identifier created with `crypto.randomUUID` when available, with timestamp/random fallback.
-- `title`: non-empty trimmed string.
-- `description`: optional string.
-- `dueDate`: optional ISO calendar date string.
-- `priority`: optional enum value `Low`, `Medium`, or `High`.
-- `status`: enum value `pending` or `completed`.
-- `createdAt`: ISO timestamp string generated when the task is created.
-- `updatedAt`: ISO timestamp string updated whenever the task changes.
-
-**Response/Output Contract**
-
-Read operations return one of the following:
-
-- Validated task collection when valid persisted data exists.
-- Empty task collection when no saved payload exists.
-- Structured load error when localStorage is unavailable, unreadable, corrupted, or contains invalid data.
-
-Write operations return one of the following:
-
-- Success result after the serialized task collection is saved.
-- Structured persistence error when localStorage is unavailable, quota is exceeded, or the write cannot be verified.
-
-**Error Handling**
-
-The repository must catch localStorage read/write exceptions and return structured errors to COMP-009 and COMP-001. On corrupted or unreadable data at load, the app must show an error banner, load an empty in-memory task list, and not automatically overwrite the existing stored data until the user performs a valid save. Writes replace the full task collection immediately after every successful create, edit, delete, or status toggle. The UI must not indicate that unsaved changes were persisted successfully. Retrying is user-driven through the next save action. Idempotency is achieved by writing the complete collection for the current application state.
-
-### ARD-API-002 — GitHub Pages Static Asset Hosting Interface
-
-- **Type:** File
-- **Operation/Topic:** `GET /`, `GET /assets/*`
-- **Provider:** EXT-002
-- **Consumers:** EXT-004
-- **Authentication:** None in application scope
-- **Versioning:** Static build artifacts are versioned by source commit and GitHub Actions deployment history
+- **Type:** REST
+- **Operation/Topic:** `GET /schedule`, `POST /booking`, `POST /reschedule` or SaaS-equivalent operations
+- **Provider:** COMP-001
+- **Consumers:** Patient browsers through EXT-008
+- **Authentication:** Patient OTP verification before booking changes
+- **Versioning:** SaaS-managed web workflow versioning with configuration version records
 
 **Request/Input Contract**
 
-Supported browsers request static HTML, JavaScript, CSS, and asset files generated by the Vite build with the configured GitHub Pages base path.
+Patient-facing workflows collect appointment type, selected slot, patient identity/contact fields, OTP verification channel, OTP code, and booking/rescheduling confirmation inputs. Required fields are defined by SaaS configuration and clinic policy.
 
 **Response/Output Contract**
 
-GitHub Pages returns static files over HTTPS with content types appropriate to each asset.
+The interface returns available slots, verification status, booking/rescheduling confirmation with appointment reference, or patient-facing recovery guidance when a slot is unavailable or a scheduling action fails.
 
 **Error Handling**
 
-Hosting errors are handled by the browser as page or asset load failures. Rollback is performed by redeploying a previous known-good commit/build through GitHub Actions.
+Errors must be clear to patients, avoid exposing internal integration details, and direct patients to choose another time or call the clinic. Failed booking/rescheduling must not create duplicate or partially confirmed appointments.
 
-### ARD-API-003 — GitHub Actions CI/CD Workflow Interface
+### ARD-API-002 — Scheduling SaaS to Integration Services Interface
+
+- **Type:** REST/Event
+- **Operation/Topic:** `POST /availability/search`, `POST /slots/hold`, `POST /appointments/confirm`, `POST /appointments/reschedule`, `POST /holds/release`
+- **Provider:** COMP-002
+- **Consumers:** COMP-001 / EXT-002
+- **Authentication:** OAuth 2.0/OIDC or vendor-equivalent scoped API credentials; mTLS where supported
+- **Versioning:** URI or header-based API versioning; initial version `v1`
+
+**Request/Input Contract**
+
+Requests include correlation ID, idempotency key where mutating, appointment type, provider/resource preferences, requested date/time range, patient verification context, appointment reference for rescheduling, and minimum necessary patient contact/identifier data.
+
+**Response/Output Contract**
+
+Responses include normalized availability slots, hold token and expiration where supported, confirmed appointment reference, rescheduled appointment reference, conflict status, retryability flag, and user-safe error code.
+
+**Error Handling**
+
+Mutating operations must be idempotent by key. Conflicts return a non-retryable slot-unavailable response. Transient EHR/vendor failures may be retried by integration services using bounded retries. Holds are released on failure or expiration where supported.
+
+### ARD-API-003 — EHR Scheduling Integration Interface
+
+- **Type:** REST
+- **Operation/Topic:** `FHIR Schedule/Slot/Appointment` operations where supported; vendor-specific hold and booking endpoints where required
+- **Provider:** EXT-001
+- **Consumers:** COMP-006
+- **Authentication:** OAuth 2.0/OIDC or vendor-equivalent scoped API credentials; mTLS where supported
+- **Versioning:** EHR/FHIR API version plus adapter contract version `v1`
+
+**Request/Input Contract**
+
+Requests include provider/resource identifiers, appointment type mappings, date/time ranges, patient scheduling identifiers, slot/appointment references, hold tokens where supported, and idempotency/correlation metadata where supported.
+
+**Response/Output Contract**
+
+Responses include normalized provider/resource availability, slot status, hold status, appointment ID, appointment status, conflict/error codes, and last-updated timestamps where available.
+
+**Error Handling**
+
+The adapter maps EHR-specific errors into normalized retryable, non-retryable, conflict, validation, authorization, and outage categories. Confirmed double booking must be prevented by hold or equivalent conflict prevention; if conflict occurs, patient recovery guidance is returned.
+
+### ARD-API-004 — OTP and Reminder Messaging Interface
+
+- **Type:** REST/Event
+- **Operation/Topic:** `POST /messages/sms`, `POST /messages/email`, vendor delivery callback topics
+- **Provider:** EXT-004 and EXT-005 through COMP-004
+- **Consumers:** COMP-004, COMP-001
+- **Authentication:** OAuth 2.0/OIDC or vendor-equivalent scoped API credentials; secrets stored in managed vault
+- **Versioning:** Vendor API version plus internal message contract version `v1`
+
+**Request/Input Contract**
+
+Requests include message type, recipient contact, template ID, appointment reference, reminder scheduled time, OTP metadata, locale/time-zone where applicable, and correlation ID. Message content must follow minimum necessary PHI rules.
+
+**Response/Output Contract**
+
+Responses include vendor message ID, accepted/rejected status, error reason when rejected, and delivery callback events for sent, delivered, failed, or expired states where supported.
+
+**Error Handling**
+
+Transient messaging failures use bounded retries. Failed reminder or OTP delivery is captured for audit/operational follow-up. OTP failures block verification; reminder failures do not change appointment state.
+
+### ARD-API-005 — Staff and Provider Identity Interface
+
+- **Type:** REST
+- **Operation/Topic:** `OIDC authorization_code flow` or SAML equivalent if required by SaaS
+- **Provider:** EXT-003
+- **Consumers:** COMP-001, COMP-002, custom services where needed
+- **Authentication:** MFA-backed clinic SSO
+- **Versioning:** IdP protocol version and role-claim mapping version `v1`
+
+**Request/Input Contract**
+
+Authentication requests include client ID, redirect URI, scopes, nonce/state, and requested claims. Authorization checks consume user identifier, MFA assurance where available, role/group claims, and session metadata.
+
+**Response/Output Contract**
+
+Identity responses include ID/access tokens or assertions, user identifier, role/group claims, token expiration, and MFA/session assurance metadata where available.
+
+**Error Handling**
+
+Authentication failures deny access without exposing sensitive details. Missing or insufficient roles deny schedule/configuration actions and generate audit events.
+
+### ARD-API-006 — Audit and Observability Event Interface
 
 - **Type:** Event
-- **Operation/Topic:** `push` or manual workflow dispatch for install, typecheck, lint, tests, scans, SBOM, build, deploy, and smoke check
-- **Provider:** EXT-003
-- **Consumers:** Engineering, EXT-002
-- **Authentication:** GitHub repository permissions and GitHub Pages deployment permissions
-- **Versioning:** Workflow definitions are versioned in source control
+- **Operation/Topic:** `audit.booking`, `audit.reschedule`, `audit.reminder`, `audit.configuration`, `audit.schedule_access`, `ops.integration_failure`
+- **Provider:** COMP-008 and COMP-009
+- **Consumers:** EXT-007, compliance reviewers, engineering operations
+- **Authentication:** Scoped service credentials; mTLS where supported
+- **Versioning:** Event schema version `v1`
 
 **Request/Input Contract**
 
-A Git event or approved manual dispatch triggers the workflow against the repository source, lockfile, test suite, and deployment configuration.
+Events include event type, timestamp, actor or verified patient context, appointment reference, correlation ID, source system, outcome, and minimum necessary metadata. PHI must be minimized and excluded unless required for audit purpose.
 
 **Response/Output Contract**
 
-The workflow produces pass/fail status, test results, coverage report, `npm audit` result, CycloneDX SBOM artifact, Vite build artifact, GitHub Pages deployment, and deployment smoke result.
+The observability/audit platform acknowledges receipt, stores immutable records where supported, and exposes searchable audit evidence according to access controls.
 
 **Error Handling**
 
-Any failed required step must fail the workflow and block release. High or critical dependency findings block release unless remediated or separately risk-accepted outside this ARD.
+Audit event delivery uses durable buffering and retry where available. Audit delivery failures create operational alerts and must not silently discard events.
 
 ## 9. Data Architecture
 
-### DATA-001 — Task
+### DATA-001 — Appointment
 
-- **Purpose:** Represent a user-managed Todo item with details, priority, due date, and completion status.
-- **System of Record:** Browser localStorage key `todo.tasks.v1`
-- **Classification:** Internal
-- **Retention:** Retained indefinitely in localStorage until the user deletes the task or clears browser/application data.
-- **Key Relationships:** Belongs to the single browser/device application scope; contributes to dashboard counts, search results, filters, ordering, and overdue calculations.
+- **Purpose:** Represent scheduled patient visit time, provider/resource, appointment type, status, and appointment reference.
+- **System of Record:** EHR/practice-management system.
+- **Classification:** Restricted.
+- **Retention:** Retained according to EHR/practice-management retention policy; operational copies outside EHR retained for 90 days.
+- **Key Relationships:** Linked to DATA-002 Patient Scheduling Identity, DATA-003 Provider/Resource, DATA-004 Appointment Type, DATA-006 Reminder, and DATA-007 Audit Event.
 
-### DATA-002 — Task Collection
+### DATA-002 — Patient Scheduling Identity and Contact
 
-- **Purpose:** Store the complete set of persisted tasks for the single browser/device scope.
-- **System of Record:** Browser localStorage key `todo.tasks.v1`
-- **Classification:** Internal
-- **Retention:** Retained indefinitely in localStorage until tasks are deleted, a valid future clear action is added, or browser/application data is cleared.
-- **Key Relationships:** Contains zero or more DATA-001 records; loaded into application state at startup and written after create, edit, delete, or status toggle operations.
+- **Purpose:** Verify patient booking/rescheduling context and deliver OTP/reminders.
+- **System of Record:** EHR/practice-management system for patient identity; messaging/scheduling systems may store minimum necessary operational contact data.
+- **Classification:** Restricted.
+- **Retention:** EHR retention in system of record; operational copies outside EHR retained for 90 days; OTP secrets retained only until expiration plus operational troubleshooting window where applicable.
+- **Key Relationships:** Linked to DATA-001 Appointment, DATA-006 Reminder, and DATA-007 Audit Event.
 
-### DATA-003 — UI State
+### DATA-003 — Provider and Resource Schedule
 
-- **Purpose:** Represent transient form, edit mode, search term, status filter, delete dialog, focus, and visible error state.
-- **System of Record:** React in-memory state in COMP-009 and child components
-- **Classification:** Internal
-- **Retention:** Current browser session memory only; not persisted except task data saved in DATA-002.
-- **Key Relationships:** Derived from and commands updates to DATA-002; not a durable record.
+- **Purpose:** Represent provider availability, resources, and scheduling calendars.
+- **System of Record:** EHR/practice-management system.
+- **Classification:** Confidential.
+- **Retention:** EHR/practice-management retention policy; operational cache outside EHR retained for no longer than needed for real-time scheduling and not more than 90 days.
+- **Key Relationships:** Determines availability for DATA-001 Appointment and DATA-004 Appointment Type.
+
+### DATA-004 — Online Scheduling Configuration
+
+- **Purpose:** Define eligible appointment types, provider availability rules, rescheduling cutoffs, reminder timing, and online scheduling controls.
+- **System of Record:** Scheduling SaaS or EHR/practice-management system depending on selected vendor capability; final authority mapping TBD.
+- **Classification:** Confidential.
+- **Retention:** Current and historical configuration changes retained according to audit policy; audit events retained 6 years.
+- **Key Relationships:** Controls DATA-001 Appointment availability, DATA-005 Slot Hold, and DATA-006 Reminder generation.
+
+### DATA-005 — Slot Hold / Conflict Prevention Record
+
+- **Purpose:** Temporarily reserve or protect a selected appointment slot during checkout.
+- **System of Record:** EHR/practice-management system where native holds exist; otherwise integration service operational store for equivalent conflict-prevention state.
+- **Classification:** Restricted.
+- **Retention:** Retained until hold expiration/release plus operational troubleshooting period, not more than 90 days outside EHR.
+- **Key Relationships:** Associated with DATA-001 Appointment candidate, DATA-003 Provider/Resource, and patient verification context.
+
+### DATA-006 — Reminder and OTP Delivery Record
+
+- **Purpose:** Track scheduled reminders, OTP requests, vendor message IDs, and delivery/failure outcomes.
+- **System of Record:** Reminder/OTP orchestration service and messaging vendor delivery logs; appointment authority remains EHR.
+- **Classification:** Restricted.
+- **Retention:** Operational delivery records retained 90 days; audit summary retained 6 years.
+- **Key Relationships:** Linked to DATA-001 Appointment, DATA-002 Patient Scheduling Identity, and DATA-007 Audit Event.
+
+### DATA-007 — Audit Event
+
+- **Purpose:** Provide evidence for booking, rescheduling, reminder activity, configuration changes, schedule access, and security-relevant events.
+- **System of Record:** Audit and compliance event store / centralized observability platform.
+- **Classification:** Restricted when containing PHI or patient-related references; otherwise Confidential.
+- **Retention:** 6 years.
+- **Key Relationships:** References DATA-001 Appointment, actor/user context, source component, event outcome, and correlation ID.
 
 ### Data Migration
 
-- **Required:** No
-- **Approach:** No migration is required for the initial release because no prior application or backend data source exists. The `todo.tasks.v1` storage key reserves a path for future schema migration if needed.
+- **Required:** No.
+- **Approach:** Existing appointments remain in the EHR/practice-management system. The scheduling SaaS and integration services read/sync existing appointments from the EHR as the system of record; no one-time migration of existing appointments is planned for the first release.
 
 ## 10. Security Architecture
 
-### ARD-SEC-001 — Client-Side Privacy Boundary and No-Backend Data Transmission
+### ARD-SEC-001 — HIPAA Vendor and PHI Handling Constraint
 
-- **Related Requirements:** PRD-NFR-003
-
-The implementation must:
-
-- Store task data only in browser localStorage for the initial version.
-- Avoid transmitting task titles, descriptions, due dates, priorities, statuses, or task identifiers to backend APIs, analytics services, telemetry services, or third-party storage services.
-- Serve static assets over HTTPS through GitHub Pages.
-- Keep task data scoped to the application origin and browser profile.
-
-The implementation must not:
-
-- Add user accounts, authentication flows, backend APIs, backend databases, or multi-device synchronization for task data.
-- Log task titles, descriptions, due dates, priorities, statuses, or task identifiers to remote services.
-- Include application secrets in client-side source code, build artifacts, or static hosting configuration.
-
-### ARD-SEC-002 — Client-Side Input Safety and Rendering Safety
-
-- **Related Requirements:** PRD-FR-002, PRD-NFR-007
+- **Related Requirements:** PRD-NFR-001, PRD-NFR-005
 
 The implementation must:
 
-- Validate task input before create or edit saves.
-- Render user-entered task content through React text rendering or equivalent escaping behavior.
-- Validate localStorage payloads before treating them as task data.
+- Use HIPAA-eligible vendors with BAAs where vendors handle PHI.
+- Encrypt PHI in transit and at rest across SaaS, cloud services, EHR integrations, messaging vendors, logs, backups, and operational stores.
+- Store only minimum necessary PHI outside the EHR/practice-management system.
+- Retain operational PHI outside the EHR for 90 days and audit logs for 6 years.
+- Capture audit logs for appointment booking, rescheduling, reminder activity, staff configuration changes, and schedule access.
 
 The implementation must not:
 
-- Use `dangerouslySetInnerHTML` or equivalent unsafe HTML injection for task content.
-- Execute user-entered task content as HTML, JavaScript, or scriptable markup.
-- Store secrets, credentials, or tokens in localStorage.
+- Use vendors handling PHI without required BAA coverage.
+- Store full appointment history indefinitely outside the EHR unless explicitly approved through compliance review.
+- Include PHI in logs, traces, analytics, or error messages beyond minimum necessary audit/operations needs.
 
-### ARD-SEC-003 — Dependency Security and Supply Chain Evidence
+### ARD-SEC-002 — Staff and Provider Access Control
 
-- **Related Requirements:** PRD-NFR-006
+- **Related Requirements:** PRD-FR-007, PRD-FR-008, PRD-FR-009, PRD-NFR-001, PRD-NFR-005
 
 The implementation must:
 
-- Run `npm audit` in GitHub Actions and block unresolved high and critical severity findings.
-- Generate a CycloneDX SBOM during CI/CD.
-- Use lockfile-based dependency installation in CI/CD.
+- Authenticate staff and providers through clinic SSO/OIDC or equivalent federated identity with MFA.
+- Enforce role-based access controls for staff schedule view, provider schedule view, and scheduling configuration changes.
+- Record schedule access and configuration changes in audit logs.
+- Deny configuration actions to unauthorized users.
 
 The implementation must not:
 
-- Suppress high or critical dependency findings without documented remediation or risk acceptance outside this ARD.
-- Depend on paid third-party UI, storage, analytics, telemetry, or infrastructure services for the first release.
+- Permit staff/provider access without MFA-backed authentication.
+- Allow provider users to view other providers’ schedules as their own schedule outside configured permissions.
+- Allow unaudited configuration changes to online scheduling rules.
+
+### ARD-SEC-003 — Service-to-Service Security
+
+- **Related Requirements:** PRD-NFR-001, PRD-NFR-004, PRD-NFR-005
+
+The implementation must:
+
+- Use OAuth 2.0/OIDC or vendor-equivalent scoped API credentials for service-to-service calls.
+- Use mTLS where supported by vendors and runtime platforms.
+- Store secrets in a managed vault or equivalent cloud secret manager.
+- Rotate credentials according to vendor/cloud capability and clinic security policy.
+- Use least-privilege scopes for EHR, SaaS, messaging, observability, and deployment credentials.
+
+The implementation must not:
+
+- Store static API keys directly in source code, container images, frontend artifacts, or unencrypted configuration.
+- Use broad administrative credentials for routine integration calls.
+- Reuse production credentials in lower environments.
+
+### ARD-SEC-004 — Secure SDLC, Scanning, and SBOM
+
+- **Related Requirements:** PRD-NFR-001, PRD-NFR-005
+
+The implementation must:
+
+- Run dependency, container, IaC, and secret scanning in CI/CD for custom integration services and infrastructure.
+- Block release on high and critical vulnerabilities unless formally risk-accepted outside this ARD.
+- Generate and retain an SBOM for custom services and deployable artifacts.
+- Run security tests for authentication, authorization, audit logging, and integration boundary controls.
+
+The implementation must not:
+
+- Deploy custom service changes that bypass required CI/CD security gates.
+- Suppress high or critical findings without documented remediation or risk acceptance.
+- Include secrets in SBOM, build logs, or deployment logs.
 
 ### Security Controls
 
-- **Authentication:** None in application scope; user accounts and authentication are out of scope for the initial version.
-- **Authorization:** None in application scope; all task data is local to the user’s browser/device and application origin.
-- **Secrets Management:** No application secrets are required or permitted in client-side code, GitHub Pages static artifacts, or runtime application configuration.
-- **Encryption:** HTTPS is required in transit for static asset delivery; application-level at-rest encryption is not provided for localStorage and remains dependent on user device/browser environment.
-- **Audit Logging:** No application audit logs are required because user accounts, backend APIs, manager reporting, and remote telemetry are out of scope.
-- **Dependency/CVE Scanning:** GitHub Actions must run `npm audit`; unresolved high and critical severity findings block release.
-- **SBOM:** Required; GitHub Actions must generate a CycloneDX SBOM artifact for the application dependencies/build.
+- **Authentication:** Patients use OTP by SMS or email before booking changes; staff/providers use clinic SSO/OIDC with MFA.
+- **Authorization:** RBAC controls staff schedule access, provider schedule access, and scheduling configuration; service accounts use least-privilege scopes.
+- **Secrets Management:** Managed vault or equivalent cloud secret manager; no secrets in source code, frontend artifacts, or plaintext deployment configuration.
+- **Encryption:** TLS for all network traffic; encryption at rest for SaaS stores, cloud databases, audit stores, logs, backups, and vendor systems handling PHI.
+- **Audit Logging:** Required for booking creation, rescheduling, reminder activity, staff configuration changes, staff/provider schedule access, authentication/authorization failures, and integration failures.
+- **Dependency/CVE Scanning:** CI/CD blocks high and critical vulnerabilities for custom services, containers, and IaC unless risk-accepted.
+- **SBOM:** Required for custom integration services and deployable artifacts.
 
 ## 11. Reliability, Performance, and Scalability
 
-### ARD-OPS-001 — Client-Side Interaction Performance
+### ARD-OPS-001 — Booking Confirmation Performance
 
-- **Target:** Create, edit, delete, status toggle, search, filter, sort, and dashboard count updates complete within 200 ms for up to 500 stored tasks on supported browsers.
-- **Validation Method:** Automated performance-oriented Vitest tests for domain utilities and representative Playwright E2E timing checks using a seeded 500-task dataset on supported automation targets.
+- **Target:** 95% of booking and rescheduling confirmation attempts complete within 5 seconds, excluding patient time spent entering OTP or form data.
+- **Validation Method:** E2E performance tests against staging with EHR sandbox/mocks and production monitoring of confirmation latency percentiles.
 
-### ARD-OPS-002 — Supported Browser Runtime Reliability
+### ARD-OPS-002 — Staff Schedule View Performance
 
-- **Target:** Core acceptance flows pass on latest stable Chrome, Edge, Firefox, Safari, mobile Safari, and mobile Chrome.
-- **Validation Method:** Playwright E2E tests where supported by CI automation plus manual acceptance testing for supported browser/device combinations not covered by automation.
+- **Target:** 95% of daily schedule view requests load within 3 seconds for pilot provider scope and expected clinic daily schedule volume.
+- **Validation Method:** E2E tests using seeded schedule data and production monitoring of schedule view latency percentiles.
 
-### ARD-OPS-003 — Deterministic Persistence Failure Handling
+### ARD-OPS-003 — Monthly Availability
 
-- **Target:** 100% of attempted persistent save operations show a clear error and avoid claiming successful persistence when localStorage is unavailable or full; 100% of corrupted/unreadable load cases show a clear error and do not automatically overwrite existing storage.
-- **Validation Method:** Vitest tests mocking localStorage read/write exceptions and invalid payloads, plus Playwright E2E tests simulating storage failure where feasible.
+- **Target:** 99.5% monthly availability for patient booking/rescheduling entry points and custom integration services, subject to upstream vendor availability.
+- **Validation Method:** Synthetic uptime checks, cloud service metrics, SaaS status monitoring, and monthly availability reports.
 
-### ARD-OPS-004 — Functional Acceptance Reliability
+### ARD-OPS-004 — Double-Booking Prevention
 
-- **Target:** 100% of Must-priority functional acceptance flows pass before release.
-- **Validation Method:** Playwright E2E tests covering create, view, edit, delete confirmation, search, filter, status toggle, dashboard count, refresh persistence, and failure handling, plus manual checks where automation is unavailable.
+- **Target:** 0 confirmed double bookings for the same provider, appointment time, and resource in acceptance conflict tests.
+- **Validation Method:** Concurrent booking integration tests, EHR sandbox conflict tests, idempotency tests, and pilot monitoring of conflict events.
 
-### ARD-OPS-005 — Static Hosting Availability Boundary
+### ARD-OPS-005 — Reminder Delivery Evidence
 
-- **Target:** Application availability depends only on GitHub Pages serving compiled assets over HTTPS; no backend runtime dependencies are introduced.
-- **Validation Method:** GitHub Actions deployment smoke test loads the deployed GitHub Pages URL and verifies the app shell renders after deployment.
+- **Target:** 100% of reminder send attempts produce a delivery status event or vendor-accepted/error event in audit/operational logs.
+- **Validation Method:** Messaging integration tests, vendor callback tests, and audit log sampling.
+
+### ARD-OPS-006 — Audit Event Capture
+
+- **Target:** 100% of booking, rescheduling, reminder activity, configuration change, and schedule access events emit an audit event in integration and acceptance tests.
+- **Validation Method:** Automated audit assertion tests and compliance review of sampled audit records.
 
 ## 12. Observability
 
-- **Logging:** Browser console logging is limited to non-sensitive diagnostics for unexpected local runtime errors; task titles, descriptions, due dates, priorities, statuses, and task identifiers must not be intentionally logged to remote services.
-- **Metrics:** No remote runtime product telemetry is required or allowed for task content; CI test results, coverage reports, scan results, SBOM generation, and deployment status provide operational evidence.
-- **Tracing:** Distributed tracing is not applicable because the initial version has no backend services or cross-service calls.
-- **Alerting:** GitHub Actions failures for install, typecheck, lint, tests, accessibility checks, build, dependency scan, SBOM generation, deployment, or smoke checks must fail the pipeline and be visible to engineering through GitHub workflow status.
-- **Sensitive Data Restrictions:** DATA-001, DATA-002, and DATA-003 are Internal; task content must remain in browser localStorage/in-memory state and must not be sent in analytics, telemetry, remote logs, or backend payloads.
+- **Logging:** Custom services must emit structured, correlation-ID-based logs with PHI minimized or redacted; logs must not include OTP codes, full message bodies, or unnecessary patient details.
+- **Metrics:** Track booking confirmation latency, availability lookup latency, EHR API latency/error rate, hold success/release/failure counts, booking conflict counts, schedule view latency, OTP/reminder send success/failure counts, and audit delivery failures.
+- **Tracing:** Trace custom integration service calls across SaaS, EHR adapter, messaging orchestration, and audit event emission using correlation IDs while avoiding PHI in span attributes.
+- **Alerting:** Alert on integration outage, EHR API error spikes, booking failure spikes, hold release failures, audit delivery failures, message delivery callback failures, availability SLA breaches, and CI/CD security gate failures.
+- **Sensitive Data Restrictions:** PHI, OTP codes, message bodies, secrets, access tokens, and full patient contact details must not be intentionally logged or traced unless explicitly required for audit and protected by access controls.
 
 ## 13. Deployment Architecture
 
-- **Environments:** Local development, GitHub Actions test environment, and GitHub Pages production environment.
-- **Deployment Model:** Static SPA deployment; Vite build artifacts are served by GitHub Pages over HTTPS with the correct GitHub Pages base path.
-- **CI/CD:** GitHub Actions runs lockfile dependency install, TypeScript typecheck, lint, Vitest unit/component tests, React Testing Library checks, Playwright E2E tests, axe accessibility checks, production build, `npm audit`, CycloneDX SBOM generation, GitHub Pages deployment, and deployment smoke test.
-- **Configuration Management:** Configuration is limited to static build settings such as Vite base path and GitHub Pages deployment settings; no runtime secrets are required.
-- **Rollback:** Redeploy the previous known-good commit/build through GitHub Actions or revert to a prior source commit and rerun the deployment pipeline.
-- **Infrastructure as Code:** GitHub Actions workflow files and GitHub Pages configuration in the repository define deployment automation; additional IaC is not required for the initial static host.
+- **Environments:** Local development, dev, test, staging, and production, with separated PHI access controls and no production credentials in lower environments.
+- **Deployment Model:** Scheduling SaaS workflows are configured in vendor-managed environments; custom integration services deploy as platform-agnostic container/serverless workloads on a HIPAA-eligible cloud runtime.
+- **CI/CD:** Git-based pipeline runs dependency install, build, lint, unit tests, integration tests, contract tests, E2E tests, accessibility tests, performance tests where applicable, security scans, SBOM generation, IaC validation, deployment, and smoke tests.
+- **Configuration Management:** SaaS configuration is versioned where exportable; service configuration uses environment-specific managed configuration and secrets from a managed vault.
+- **Rollback:** Redeploy previous known-good custom service artifact and IaC state; revert SaaS configuration using vendor-supported version/export/import process or documented manual rollback runbook.
+- **Infrastructure as Code:** Required for custom cloud infrastructure; exact tool TBD by selected cloud/runtime.
 
 ## 14. Testing Architecture
 
@@ -649,58 +709,67 @@ Required test levels:
 
 Minimum quality expectations:
 
-- **Coverage Threshold:** 80% line coverage for domain and persistence utilities, with critical PRD acceptance flows covered by Playwright E2E tests.
-- **Blocking Security Severity:** Unresolved High and Critical dependency/CVE findings block release.
-- **Required Build/Lint Checks:** Lockfile dependency install, TypeScript typecheck, lint, Vitest unit/component tests, React Testing Library component tests, Playwright E2E tests, axe accessibility checks for core screens, production build, `npm audit`, CycloneDX SBOM generation, GitHub Pages deployment, and deployment smoke test.
+- **Coverage Threshold:** 80% line coverage for custom domain, integration orchestration, and security/audit utility code.
+- **Blocking Security Severity:** High and Critical vulnerabilities block release unless formally risk-accepted outside this ARD.
+- **Required Build/Lint Checks:** Build, lint, type/static checks appropriate to implementation language, unit tests, integration tests, EHR/messaging/SaaS contract tests, E2E booking/rescheduling/schedule-view flows, WCAG 2.1 AA automated accessibility scans with no critical violations, performance tests for booking confirmation and schedule view targets, dependency/container/IaC/secret scans, SBOM generation, IaC validation, deployment smoke tests, and audit event assertion tests.
 
 ## 15. Architecture Constraints
 
-- ARC-CON-001 — The first release must remain a browser-only React, TypeScript, and Vite SPA.
-- ARC-CON-002 — Task data must use browser localStorage only and must not use backend APIs, backend databases, paid storage, or multi-device synchronization.
-- ARC-CON-003 — Task data must not be transmitted to backend APIs, analytics services, telemetry services, third-party storage services, or remote logs.
-- ARC-CON-004 — The deployment target for the first release is GitHub Pages served over HTTPS.
-- ARC-CON-005 — The CI/CD platform for the first release is GitHub Actions.
-- ARC-CON-006 — The app must support latest stable Chrome, Edge, Firefox, Safari, mobile Safari, and mobile Chrome, using manual checks where automation is unavailable.
-- ARC-CON-007 — The release must pass all Must-priority requirements and release gates before rollout to the one-user pilot.
-- ARC-CON-008 — The UI styling layer must use plain scoped CSS or CSS modules with no paid UI kit.
-- ARC-CON-009 — The application must use a single-screen SPA model with no client router for the first release.
-- ARC-CON-010 — Dependency scanning must block unresolved High and Critical findings, and CI/CD must generate a CycloneDX SBOM.
+- ARC-CON-001 — The solution must avoid unnecessary operational complexity for a small business, per CON-001.
+- ARC-CON-002 — The solution must satisfy HIPAA requirements for PHI handling, per CON-002 and PRD-NFR-001.
+- ARC-CON-003 — Vendors handling PHI must be HIPAA-eligible and have BAAs where required, per PRD-NFR-001.
+- ARC-CON-004 — PHI must be encrypted in transit and at rest, per PRD-NFR-001.
+- ARC-CON-005 — Staff and provider access must use role-based access control and audit logs, per PRD-NFR-001 and PRD-NFR-005.
+- ARC-CON-006 — Patient experience must be mobile-responsive web only with no native app, per CON-003 and PRD-NFR-003.
+- ARC-CON-007 — The first release supports only staff-configured standard non-urgent appointment types, per CON-004.
+- ARC-CON-008 — Urgent/emergency scheduling, billing/payments, clinical messaging, telehealth, and native apps are out of scope, per CON-005.
+- ARC-CON-009 — Scheduling availability must use real-time two-way EHR/practice-management integration with slot holds or equivalent conflict prevention, per CON-006 and PRD-NFR-004.
+- ARC-CON-010 — Reminder channels are email and SMS only in the first release, per CON-007.
+- ARC-CON-011 — Rollout must start with a one-provider pilot before broader launch, per CON-008.
+- ARC-CON-012 — Patient-facing and staff-facing web flows must meet WCAG 2.1 AA, per PRD-NFR-002.
+- ARC-CON-013 — Existing appointments must not be migrated into a new system of record for the first release.
 
 ## 16. Risks and Trade-offs
 
 | ID | Risk/Trade-off | Impact | Mitigation |
 |---|---|---|---|
-| ARC-RISK-001 | Browser localStorage can be unavailable, full, cleared, corrupted, blocked, or device-local only | User may lose task data or expect persistence that cannot be guaranteed | Show clear persistence/load errors, avoid false success states, validate payloads, document single-browser/device scope, and test failure paths |
-| ARC-RISK-002 | No backend or accounts means no multi-device sync, sharing, or centralized recovery | Users may expect capabilities outside first-release scope | Keep product copy and release notes clear that the app is a lightweight single-user demo |
-| ARC-RISK-003 | GitHub Pages static hosting has no backend observability or server-side control | Runtime failures may be visible only to the user unless reproduced | Use automated E2E/smoke tests and CI evidence; keep runtime diagnostics non-sensitive and local |
-| ARC-RISK-004 | Hand-written runtime validation can drift from TypeScript types | Valid data may be rejected or invalid data may be accepted if tests are incomplete | Co-locate schema tests with domain/persistence tests and require coverage for valid and invalid v1 payloads |
-| ARC-RISK-005 | Browser automation may not fully cover Safari and mobile Safari in CI | Release confidence may depend partly on manual checks | Require documented manual acceptance checks where Playwright automation is unavailable |
-| ARC-RISK-006 | Dependency vulnerabilities can delay release | High/critical findings may block deployment close to release | Run `npm audit` early in CI and keep dependency set minimal |
-| ARC-RISK-007 | Accessible in-app dialog adds implementation complexity | Delete confirmation could fail keyboard/focus requirements if implemented poorly | Include keyboard E2E checks and axe checks for core screens/dialog states |
+| ARC-RISK-001 | EHR/practice-management system may not support real-time two-way sync or slot holds through usable APIs | High impact to double-booking prevention and patient trust | Validate EHR capabilities early; isolate EHR behavior in COMP-006; define approved equivalent conflict-prevention mechanism |
+| ARC-RISK-002 | Scheduling SaaS may not expose sufficient audit export, SSO, accessibility, or configuration versioning | High impact to HIPAA evidence and release readiness | Include audit/SSO/WCAG/export requirements in vendor selection and acceptance criteria |
+| ARC-RISK-003 | Hybrid architecture introduces vendor dependency and integration complexity | Medium operational complexity for small clinic | Keep custom services narrow, use managed cloud capabilities, and automate deployment/monitoring |
+| ARC-RISK-004 | SMS/email vendors may handle PHI or message content inconsistently | High compliance and privacy impact | Use HIPAA-eligible vendors with BAAs; minimize PHI in templates; audit delivery events |
+| ARC-RISK-005 | Centralized observability can accidentally collect PHI | High compliance impact | Redaction, PHI-safe logging standards, access controls, and log review tests |
+| ARC-RISK-006 | Platform-agnostic cloud decision defers concrete IaC and managed service choices | Medium schedule/design risk | Keep provider-specific decisions in Open Architecture Questions and finalize before implementation |
+| ARC-RISK-007 | Staff workflow adoption may be limited if SaaS schedule view does not match operations | Medium adoption impact | Pilot with one provider, gather feedback, and tune configuration before broader rollout |
 
 ## 17. Open Architecture Questions
 
 | ID | Question | Owner | Status | Decision/Due Date |
 |---|---|---|---|---|
-| ARC-OQ-001 | Name the Architecture Owner for this ARD. | Product Owner | Open | TBD |
-| ARC-OQ-002 | Name ARD contributors, including engineering, security, and product participants. | Product Owner | Open | TBD |
-| ARC-OQ-003 | Name the Security Reviewer for approval. | Product Owner | Open | TBD |
-| ARC-OQ-004 | Name the Engineering Lead for approval. | Product Owner | Open | TBD |
+| ARC-OQ-001 | Which exact EHR/practice-management system and integration interface will be used for real-time two-way scheduling sync? | Technical Owner | Open | TBD |
+| ARC-OQ-002 | Which HIPAA-eligible cloud provider/runtime will host custom integration services? | Architecture Owner | Open | TBD |
+| ARC-OQ-003 | Which scheduling SaaS vendor will host patient, staff, and provider web workflows? | Product Owner / Architecture Owner | Open | TBD |
+| ARC-OQ-004 | Which SMS and email vendors will be used for OTP and reminders, and what BAA coverage applies? | Security Reviewer | Open | TBD |
+| ARC-OQ-005 | Which exact appointment types, provider availability rules, and rescheduling cutoff values apply to the one-provider pilot? | Clinic Operations | Open | TBD |
+| ARC-OQ-006 | Which system is authoritative for online scheduling configuration if the EHR and SaaS both support rule storage? | Architecture Owner | Open | TBD |
+| ARC-OQ-007 | Who is the named Architecture Owner and who are named ARD contributors? | Product Owner | Open | TBD |
+| ARC-OQ-008 | What is the target date for the one-provider pilot and broader rollout decision? | Product Owner | Open | TBD |
+| ARC-OQ-009 | What is the exact numeric baseline and target for missed-call/voicemail scheduling burden reduction? | Product Owner | Open | TBD |
 
 ## 18. Feature Mapping
 
 | Feature | Relevant Components | Decision IDs | Interface IDs | Security IDs |
 |---|---|---|---|---|
-| FEAT-001 | COMP-001, COMP-002, COMP-003, COMP-004, COMP-007, COMP-009 | ARD-DEC-001, ARD-DEC-003, ARD-DEC-004, ARD-DEC-009 | ARD-API-001 | ARD-SEC-002 |
-| FEAT-002 | COMP-001, COMP-006, COMP-007, COMP-009 | ARD-DEC-001, ARD-DEC-003, ARD-DEC-004 | ARD-API-001 | ARD-SEC-001 |
-| FEAT-003 | COMP-001, COMP-005, COMP-007, COMP-009 | ARD-DEC-001, ARD-DEC-003, ARD-DEC-004 | ARD-API-001 | ARD-SEC-001 |
-| FEAT-004 | COMP-001, COMP-007, COMP-008, COMP-009 | ARD-DEC-002, ARD-DEC-003, ARD-DEC-005 | ARD-API-001 | ARD-SEC-001, ARD-SEC-002 |
-| FEAT-005 | COMP-010 | ARD-DEC-001, ARD-DEC-006, ARD-DEC-007, ARD-DEC-008 | ARD-API-002, ARD-API-003 | ARD-SEC-003 |
+| FEAT-001 | COMP-001, COMP-002, COMP-003, COMP-006, COMP-007, COMP-008 | ARD-DEC-001, ARD-DEC-002, ARD-DEC-003 | ARD-API-001, ARD-API-002, ARD-API-003, ARD-API-006 | ARD-SEC-001, ARD-SEC-003 |
+| FEAT-002 | COMP-001, COMP-002, COMP-004, COMP-008 | ARD-DEC-001, ARD-DEC-005 | ARD-API-001, ARD-API-004, ARD-API-006 | ARD-SEC-001, ARD-SEC-003 |
+| FEAT-003 | COMP-002, COMP-003, COMP-006, COMP-007, COMP-008, COMP-009 | ARD-DEC-002, ARD-DEC-003, ARD-DEC-007 | ARD-API-002, ARD-API-003, ARD-API-006 | ARD-SEC-001, ARD-SEC-003, ARD-SEC-004 |
+| FEAT-004 | COMP-001, COMP-002, COMP-004, COMP-008, COMP-009 | ARD-DEC-001, ARD-DEC-005, ARD-DEC-007 | ARD-API-004, ARD-API-006 | ARD-SEC-001, ARD-SEC-003 |
+| FEAT-005 | COMP-001, COMP-005, COMP-006, COMP-008 | ARD-DEC-001, ARD-DEC-002, ARD-DEC-004 | ARD-API-003, ARD-API-005, ARD-API-006 | ARD-SEC-001, ARD-SEC-002 |
+| FEAT-006 | COMP-001, COMP-005, COMP-008, COMP-010 | ARD-DEC-001, ARD-DEC-004, ARD-DEC-005 | ARD-API-005, ARD-API-006 | ARD-SEC-001, ARD-SEC-002, ARD-SEC-004 |
 
 ## 19. Approval
 
 | Role | Name | Decision | Date |
 |---|---|---|---|
-| Solution Architect | TBD; see ARC-OQ-001 | Pending | TBD |
-| Security Reviewer | TBD; see ARC-OQ-003 | Pending | TBD |
-| Engineering Lead | TBD; see ARC-OQ-004 | Pending | TBD |
+| Solution Architect | TBD | Pending | TBD |
+| Security Reviewer | TBD | Pending | TBD |
+| Engineering Lead | TBD | Pending | TBD |
