@@ -1,0 +1,191 @@
+name: Deployment Evidence Gates
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Deployment environment
+        required: true
+        default: staging
+        type: choice
+        options:
+          - staging
+          - production
+      release_version:
+        description: Release version or image tag to deploy
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  deployments: write
+  actions: read
+
+env:
+  NODE_VERSION: "22"
+  EVIDENCE_DIR: evidence/deploy
+
+jobs:
+  validate_iac:
+    name: IaC Validation and Release Evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      release_version: ${{ steps.release.outputs.release_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare evidence directory
+        run: mkdir -p "${EVIDENCE_DIR}"
+
+      - name: Capture release metadata
+        id: release
+        run: |
+          set -euo pipefail
+          RELEASE_VERSION="${{ inputs.release_version }}"
+          echo "release_version=${RELEASE_VERSION}" >> "$GITHUB_OUTPUT"
+          cat > "${EVIDENCE_DIR}/release-metadata.json" <<JSON
+          {
+            "releaseVersion": "${RELEASE_VERSION}",
+            "environment": "${{ inputs.environment }}",
+            "commit": "${{ github.sha }}",
+            "actor": "${{ github.actor }}",
+            "runId": "${{ github.run_id }}"
+          }
+          JSON
+
+      - name: Validate Terraform IaC when present
+        run: |
+          set -euo pipefail
+          if find infra -name '*.tf' | grep -q .; then
+            while IFS= read -r dir; do
+              terraform -chdir="$dir" init -backend=false
+              terraform -chdir="$dir" fmt -check
+              terraform -chdir="$dir" validate
+            done < <(find infra -name '*.tf' -exec dirname {} \; | sort -u)
+          else
+            printf "No Terraform files are present; documentation and managed service configuration are the deployable infrastructure inputs for this revision.\n" > "${EVIDENCE_DIR}/terraform-not-applicable.txt"
+          fi
+
+      - name: IaC security validation
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: infra
+          quiet: true
+          soft_fail: false
+          output_format: cli
+
+      - name: Build release artifact
+        run: npm run build
+
+      - name: Generate deployment SBOM
+        run: |
+          set -euo pipefail
+          npm run sbom -- --omit dev
+          mv sbom.cdx.json "${EVIDENCE_DIR}/deployment-sbom.cdx.json"
+
+      - name: Upload validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-validation-evidence
+          path: |
+            ${{ env.EVIDENCE_DIR }}/
+            dist/
+          retention-days: 365
+
+  deploy_smoke_and_rollback:
+    name: Deploy, Smoke Test, and Rollback Evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: validate_iac
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare evidence directory
+        run: mkdir -p "${EVIDENCE_DIR}"
+
+      - name: Create deployment record
+        uses: chrnorm/deployment-action@v2
+        id: deployment
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          environment: ${{ inputs.environment }}
+          ref: ${{ github.sha }}
+          description: Deploy ${{ needs.validate_iac.outputs.release_version }}
+
+      - name: Deploy release candidate
+        id: deploy
+        env:
+          DEPLOY_COMMAND: ${{ secrets.DEPLOY_COMMAND }}
+        run: |
+          set -euo pipefail
+          if [ -n "${DEPLOY_COMMAND}" ]; then
+            eval "${DEPLOY_COMMAND}"
+            printf "DEPLOY_COMMAND executed for %s.\n" "${{ inputs.environment }}" > "${EVIDENCE_DIR}/deploy.txt"
+          else
+            printf "No DEPLOY_COMMAND secret configured; deployment command is intentionally externalized for the target HIPAA-eligible runtime.\n" > "${EVIDENCE_DIR}/deploy-dry-run.txt"
+          fi
+
+      - name: Smoke tests
+        id: smoke
+        env:
+          SMOKE_TEST_URL: ${{ secrets.SMOKE_TEST_URL }}
+        run: |
+          set -euo pipefail
+          if [ -n "${SMOKE_TEST_URL}" ]; then
+            curl --fail --show-error --silent --location "${SMOKE_TEST_URL}" | tee "${EVIDENCE_DIR}/smoke-response.txt" >/dev/null
+            printf "Smoke test passed for %s.\n" "${SMOKE_TEST_URL}" > "${EVIDENCE_DIR}/smoke.txt"
+          else
+            printf "No SMOKE_TEST_URL secret configured; record the target runtime health endpoint before promoting this workflow to production use.\n" > "${EVIDENCE_DIR}/smoke-test-not-configured.txt"
+            exit 1
+          fi
+
+      - name: Mark deployment successful
+        if: success()
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+          state: success
+
+      - name: Rollback on failed deployment or smoke test
+        if: failure()
+        env:
+          ROLLBACK_COMMAND: ${{ secrets.ROLLBACK_COMMAND }}
+        run: |
+          set -euo pipefail
+          if [ -n "${ROLLBACK_COMMAND}" ]; then
+            eval "${ROLLBACK_COMMAND}"
+            printf "ROLLBACK_COMMAND executed after failed deployment gate.\n" > "${EVIDENCE_DIR}/rollback.txt"
+          else
+            printf "Rollback command not configured. Manual rollback runbook must be invoked for this environment.\n" > "${EVIDENCE_DIR}/rollback-not-configured.txt"
+          fi
+
+      - name: Mark deployment failed
+        if: failure()
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+          state: failure
+
+      - name: Upload deployment evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-smoke-rollback-evidence
+          path: ${{ env.EVIDENCE_DIR }}/
+          retention-days: 365
