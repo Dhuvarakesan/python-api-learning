@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "alertGroup": "audit-and-scheduling-operations",
+  "description": "Alert definitions for PHI-minimized scheduling, EHR, messaging, audit, and CI/CD health signals.",
+  "alerts": [
+    {
+      "id": "integration-outage",
+      "severity": "critical",
+      "metric": "ops_integration_failure_total",
+      "condition": "rate_5m > 0 and healthy_instance_count == 0",
+      "for": "5m",
+      "summary": "Integration outage detected",
+      "labels": ["environment", "source_service", "integration_name", "correlation_id"]
+    },
+    {
+      "id": "ehr-error-spike",
+      "severity": "critical",
+      "metric": "ehr_error_rate",
+      "condition": "rate_10m >= 0.05",
+      "for": "10m",
+      "summary": "EHR error rate exceeded 5 percent",
+      "labels": ["environment", "source_service", "ehr_operation"]
+    },
+    {
+      "id": "booking-failure-spike",
+      "severity": "critical",
+      "metric": "booking_failure_total",
+      "condition": "rate_10m >= 0.03 or count_5m >= 5",
+      "for": "10m",
+      "summary": "Booking failures spiked",
+      "labels": ["environment", "source_service", "outcome", "correlation_id"]
+    },
+    {
+      "id": "hold-release-failures",
+      "severity": "high",
+      "metric": "hold_release_failure_total",
+      "condition": "count_15m >= 1",
+      "for": "15m",
+      "summary": "Hold release failure requires reconciliation",
+      "labels": ["environment", "source_service", "hold_status", "correlation_id"]
+    },
+    {
+      "id": "audit-delivery-failures",
+      "severity": "critical",
+      "metric": "audit_delivery_failures_total",
+      "condition": "count_5m >= 1",
+      "for": "5m",
+      "summary": "Audit event delivery failed",
+      "labels": ["environment", "source_service", "event_type", "correlation_id"]
+    },
+    {
+      "id": "message-callback-failures",
+      "severity": "high",
+      "metric": "message_callback_failure_total",
+      "condition": "count_10m >= 3",
+      "for": "10m",
+      "summary": "Messaging callback failures are delaying delivery status updates",
+      "labels": ["environment", "source_service", "channel", "delivery_status"]
+    },
+    {
+      "id": "availability-breach",
+      "severity": "high",
+      "metric": "availability_lookup_latency_ms",
+      "condition": "p95_15m >= 2000 or stale_availability_count_15m >= 1",
+      "for": "15m",
+      "summary": "Availability lookup is breaching freshness or latency targets",
+      "labels": ["environment", "source_service", "correlation_id"]
+    },
+    {
+      "id": "ci-cd-security-gate-failure",
+      "severity": "critical",
+      "metric": "ci_cd_security_gate_failure_total",
+      "condition": "count_1h >= 1",
+      "for": "1h",
+      "summary": "CI/CD security gate failed",
+      "labels": ["environment", "pipeline", "gate_name", "commit_ref"]
+    }
+  ],
+  "phiSafety": {
+    "routeIncidentsBy": ["environment", "source_service", "correlation_id"],
+    "excludedFields": [
+      "otpCode",
+      "messageBody",
+      "secret",
+      "accessToken",
+      "patientName",
+      "dateOfBirth",
+      "fullAddress",
+      "phone",
+      "email"
+    ]
+  }
+}

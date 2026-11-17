@@ -84,3 +84,23 @@ export function requiresIdempotencyKey(method: string): boolean {
 export function isAuditRetention(policy: RetentionPolicy): boolean {
   return policy === "audit-6-years";
 }
+
+export type {
+  ActorContext,
+  AppointmentReference,
+  AuditActorType,
+  AuditEventSchemaVersion,
+  AuditEventType,
+  AuditEventV1,
+  AuditOutcome,
+  AuditSourceSystem,
+  AuditSubjectContext,
+  MinimumNecessaryAuditMetadata,
+  VerifiedPatientContext,
+} from "./audit-event-v1";
+
+export {
+  AUDIT_EVENT_SCHEMA_VERSION,
+  AUDIT_EVENT_TYPES,
+  DISALLOWED_OBSERVABILITY_FIELDS,
+} from "./audit-event-v1";

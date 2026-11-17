@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "title": "Audit and Scheduling Operations",
+  "description": "PHI-minimized dashboard using correlation IDs and references instead of patient details.",
+  "tags": ["audit", "scheduling", "ehr", "messaging", "hipaa-safe"],
+  "variables": [
+    {
+      "name": "environment",
+      "label": "Environment",
+      "type": "query",
+      "query": "label_values(environment)"
+    },
+    {
+      "name": "source_service",
+      "label": "Source Service",
+      "type": "query",
+      "query": "label_values(source_service)"
+    }
+  ],
+  "panels": [
+    {
+      "id": "booking-latency",
+      "title": "Booking latency p95",
+      "metric": "booking_latency_ms",
+      "unit": "milliseconds",
+      "aggregation": "p95",
+      "requiredLabels": ["environment", "source_service", "correlation_id"]
+    },
+    {
+      "id": "availability-lookup-latency",
+      "title": "Availability lookup latency p95",
+      "metric": "availability_lookup_latency_ms",
+      "unit": "milliseconds",
+      "aggregation": "p95",
+      "requiredLabels": ["environment", "source_service", "correlation_id"]
+    },
+    {
+      "id": "ehr-error-rate",
+      "title": "EHR error rate",
+      "metric": "ehr_error_rate",
+      "unit": "ratio",
+      "aggregation": "rate_5m",
+      "requiredLabels": ["environment", "source_service", "ehr_operation"]
+    },
+    {
+      "id": "hold-counts",
+      "title": "Hold counts",
+      "metric": "hold_count",
+      "unit": "count",
+      "aggregation": "sum",
+      "requiredLabels": ["environment", "source_service", "hold_status"]
+    },
+    {
+      "id": "conflict-counts",
+      "title": "Conflict counts",
+      "metric": "conflict_count",
+      "unit": "count",
+      "aggregation": "sum",
+      "requiredLabels": ["environment", "source_service", "conflict_type"]
+    },
+    {
+      "id": "schedule-view-latency",
+      "title": "Schedule view latency p95",
+      "metric": "schedule_view_latency_ms",
+      "unit": "milliseconds",
+      "aggregation": "p95",
+      "requiredLabels": ["environment", "source_service", "correlation_id"]
+    },
+    {
+      "id": "messaging-delivery-status",
+      "title": "Messaging delivery status",
+      "metric": "messaging_delivery_status_total",
+      "unit": "count",
+      "aggregation": "rate_5m",
+      "requiredLabels": ["environment", "source_service", "channel", "delivery_status"]
+    },
+    {
+      "id": "audit-delivery-failures",
+      "title": "Audit delivery failures",
+      "metric": "audit_delivery_failures_total",
+      "unit": "count",
+      "aggregation": "rate_5m",
+      "requiredLabels": ["environment", "source_service", "event_type"]
+    }
+  ],
+  "phiSafety": {
+    "joinKey": "correlation_id",
+    "excludedFields": [
+      "otpCode",
+      "oneTimePassword",
+      "messageBody",
+      "smsBody",
+      "emailBody",
+      "secret",
+      "clientSecret",
+      "accessToken",
+      "refreshToken",
+      "authorization",
+      "patientName",
+      "dateOfBirth",
+      "fullAddress",
+      "phone",
+      "email"
+    ]
+  }
+}
