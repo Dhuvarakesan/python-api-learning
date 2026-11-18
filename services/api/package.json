@@ -1,0 +1,21 @@
+{
+  "name": "@clinic/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b --pretty false",
+    "start": "node dist/index.js",
+    "typecheck": "tsc -b --pretty false"
+  },
+  "dependencies": {
+    "@clinic/config": "0.1.0",
+    "@clinic/shared": "0.1.0"
+  }
+}
