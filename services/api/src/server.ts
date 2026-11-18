@@ -1,5 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { pathToFileURL } from 'node:url';
+import { createApiConfig } from './config/index.js';
 import {
   allowAnonymousAuthorization,
   createRequestContext,
@@ -12,6 +13,7 @@ import { registerAuditRoutes } from './modules/audit/index.js';
 import { registerRequestRoutes } from './modules/requests/index.js';
 import { registerSchedulingIntegrationRoutes } from './modules/scheduling-integration/index.js';
 import { registerVerificationRoutes } from './modules/verification/index.js';
+import { toPatientSafeErrorResponse } from './security/index.js';
 
 export interface ApiResponse {
   readonly statusCode?: number;
@@ -96,19 +98,16 @@ export function createApiServer(options: ApiServerOptions = {}) {
       }
     } catch (error) {
       if (!response.writableEnded) {
-        writeJsonResponse(response, {
-          statusCode: 500,
-          body: { error: 'internal_server_error' },
-        });
+        writeJsonResponse(response, toPatientSafeErrorResponse(error));
       }
     }
   });
 }
 
 export function startApiServer(options: ApiServerOptions = {}) {
+  const config = createApiConfig();
   const server = createApiServer(options);
-  const port = Number.parseInt(process.env.PORT ?? '3000', 10);
-  const host = process.env.HOST ?? '0.0.0.0';
+  const { host, port } = config.http;
 
   server.listen(port, host, () => {
     console.info(

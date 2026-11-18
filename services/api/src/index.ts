@@ -45,6 +45,43 @@ export {
   type AuditEventRepository,
   type CreateAuditEventInput,
 } from './repositories/index.js';
+export {
+  createApiConfig,
+  type ApiConfig,
+  type ApiHttpConfig,
+  type ApiRuntimeMode,
+  type ApiSecretsConfig,
+} from './config/index.js';
+export {
+  PatientSafeError,
+  createPatientSafeError,
+  createPhiSafeMetadata,
+  describeSecret,
+  loadSecretReference,
+  normalizePatientSafeError,
+  requireSecretReference,
+  resolveSecretValue,
+  summarizeUnknownError,
+  toPatientSafeErrorResponse,
+  type EnvSource,
+  type ManagedSecretResolver,
+  type PatientSafeErrorOptions,
+  type PatientSafeErrorResponse,
+  type PhiSafeMetadata,
+  type PhiSafeMetadataValue,
+  type SecretReference,
+  type SecretSource,
+} from './security/index.js';
+export {
+  AUDIT_EVENT_TYPES,
+  createAuditService,
+  type AuditActorContext,
+  type AuditEntityReference,
+  type AuditEventType,
+  type AuditRequestContext,
+  type AuditService,
+  type WriteAuditEventInput,
+} from './modules/audit/index.js';
 
 export interface ApiService {
   readonly name: 'clinic-api';
