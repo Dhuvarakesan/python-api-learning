@@ -1,7 +1,4 @@
 import styles from './App.module.css';
-import type { TaskStatus } from './features/tasks/types';
-
-const initialTaskStatus: TaskStatus = 'pending';
 
 function App() {
   return (
@@ -12,8 +9,8 @@ function App() {
           Todo app foundation
         </h1>
         <p className={styles.copy}>
-          A browser-only React and TypeScript app shell is ready for the next
-          feature task. New tasks will start as {initialTaskStatus}.
+          A browser-only React and TypeScript app shell is ready for static
+          product features.
         </p>
       </section>
     </main>
