@@ -47,4 +47,4 @@ export const primaryNavigation: PrimaryNavigationItem[] = [
   },
 ];
 
-export const defaultScreenId = primaryNavigation[0].id;
+export const defaultScreenId: PrimaryScreenId = 'monthly-summary';

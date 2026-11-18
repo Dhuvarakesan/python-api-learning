@@ -1,23 +1,28 @@
 {
-  "name": "todo-1",
+  "name": "clinic-booking-app",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
+    "dev": "next dev",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint . --ext .ts,.tsx --report-unused-disable-directives --max-warnings 0",
     "test": "vitest run",
     "accessibility": "npm run build && playwright test tests/e2e/accessibility.spec.ts --project=chromium",
     "e2e": "playwright test",
-    "build": "npm run typecheck && vite build",
-    "dep-scan": "npm audit --omit=dev --audit-level=high",
-    "audit": "npm run dep-scan",
-    "sbom": "cyclonedx-npm --output-file sbom.cdx.json",
-    "ci": "npm run typecheck && npm run lint && npm run test && npm run build && npm run accessibility && npm run dep-scan && npm run sbom",
-    "preview": "vite preview"
+    "build": "next build",
+    "security:scan": "npm audit --omit=dev --audit-level=high",
+    "dep-scan": "npm run security:scan",
+    "audit": "npm run security:scan",
+    "sbom:generate": "cyclonedx-npm --output-file sbom.cdx.json",
+    "sbom": "npm run sbom:generate",
+    "ci": "npm run typecheck && npm run lint && npm run test && npm run build && npm run accessibility && npm run security:scan && npm run sbom:generate",
+    "start": "next start",
+    "preview": "next start"
   },
   "dependencies": {
+    "next": "^16.0.3",
+    "pg": "^8.23.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
@@ -30,6 +35,7 @@
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.10",
     "@types/node": "^26.6.6",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@typescript-eslint/eslint-plugin": "^8.73.0",
@@ -41,6 +47,6 @@
     "jsdom": "^29.1.1",
     "typescript": "^5.6.3",
     "vite": "^6.4.6",
-    "vitest": "4.1.12"
+    "vitest": "^4.1.12"
   }
 }
