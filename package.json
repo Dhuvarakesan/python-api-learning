@@ -8,11 +8,13 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "lint": "eslint . --ext .ts,.tsx --report-unused-disable-directives --max-warnings 0",
     "test": "vitest run",
-    "coverage": "vitest run --coverage",
+    "accessibility": "npm run build && playwright test tests/e2e/accessibility.spec.ts --project=chromium",
     "e2e": "playwright test",
     "build": "npm run typecheck && vite build",
-    "audit": "npm audit --audit-level=high",
+    "dep-scan": "npm audit --omit=dev --audit-level=high",
+    "audit": "npm run dep-scan",
     "sbom": "cyclonedx-npm --output-file sbom.cdx.json",
+    "ci": "npm run typecheck && npm run lint && npm run test && npm run build && npm run accessibility && npm run dep-scan && npm run sbom",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -20,24 +22,25 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@cyclonedx/cyclonedx-npm": "^7.0.0",
     "@playwright/test": "^1.65.0",
+    "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.10",
     "@types/node": "^26.6.6",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
-    "@typescript-eslint/eslint-plugin": "^8.72.2",
-    "@typescript-eslint/parser": "^8.72.2",
-    "@vitejs/plugin-react": "4.3.4",
-    "@vitest/coverage-v8": "2.1.9",
+    "@typescript-eslint/eslint-plugin": "^8.73.0",
+    "@typescript-eslint/parser": "^8.73.0",
+    "@vitejs/plugin-react": "^4.7.0",
     "eslint": "^8.57.1",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.4.26",
     "jsdom": "^29.1.1",
-    "typescript": "5.6.3",
-    "vite": "5.4.21",
-    "vitest": "2.1.9"
+    "typescript": "^5.6.3",
+    "vite": "^6.4.6",
+    "vitest": "4.1.12"
   }
 }
