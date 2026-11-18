@@ -23,6 +23,28 @@ export {
   type StructuredLogEntry,
   type StructuredLogger,
 } from './middleware/index.js';
+export {
+  createDatabaseConfig,
+  createPostgresClient,
+  loadMigrations,
+  migrateDatabase,
+  runMigrations,
+  type DatabaseClient,
+  type DatabaseConfig,
+  type DatabaseEnvironment,
+  type DatabaseQueryResult,
+  type DatabaseValue,
+  type ManagedDatabaseClient,
+  type Migration,
+  type MigrationResult,
+} from './db/index.js';
+export {
+  SqlAuditEventRepository,
+  type AuditActorType,
+  type AuditEvent,
+  type AuditEventRepository,
+  type CreateAuditEventInput,
+} from './repositories/index.js';
 
 export interface ApiService {
   readonly name: 'clinic-api';

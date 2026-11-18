@@ -11,11 +11,16 @@
   },
   "scripts": {
     "build": "tsc -b --pretty false",
+    "db:migrate": "npm run build && node dist/db/migrate.js",
     "start": "node dist/server.js",
     "typecheck": "tsc -b --pretty false"
   },
   "dependencies": {
     "@clinic/config": "0.1.0",
-    "@clinic/shared": "0.1.0"
+    "@clinic/shared": "0.1.0",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1"
   }
 }
