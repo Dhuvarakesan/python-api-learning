@@ -47,7 +47,7 @@ export function AppShell() {
   const activeScreen = useMemo(
     () =>
       primaryNavigation.find((item) => item.id === activeScreenId) ??
-      primaryNavigation[0],
+      primaryNavigation.find((item) => item.id === defaultScreenId)!,
     [activeScreenId],
   );
 

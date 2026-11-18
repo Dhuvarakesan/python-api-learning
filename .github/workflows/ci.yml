@@ -45,11 +45,11 @@ jobs:
       - name: Accessibility check
         run: npm run accessibility
 
-      - name: Dependency CVE scan
-        run: npm run dep-scan
+      - name: Security scan hook
+        run: npm run security:scan
 
-      - name: Generate SBOM
-        run: npm run sbom
+      - name: SBOM generation hook
+        run: npm run sbom:generate
 
       - name: Upload release confidence artifacts
         uses: actions/upload-artifact@v4
