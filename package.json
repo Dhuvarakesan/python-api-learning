@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace @clinic/patient-web",
+    "ci:validate": "npm run lint && npm run typecheck && npm test && npm run build",
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint . --ext .ts,.tsx --report-unused-disable-directives --max-warnings 0",
     "test": "vitest run",
@@ -17,7 +18,11 @@
     "e2e": "playwright test",
     "build": "npm run build --workspaces --if-present",
     "audit": "npm audit --audit-level=high",
+    "security:scan": "npm run audit",
     "sbom": "cyclonedx-npm --output-file sbom.cdx.json",
+    "security:sbom": "npm run sbom",
+    "iac:validate": "test -d infra/modules && echo 'IaC validation placeholder: add terraform fmt/validate or cloud vendor checks when modules are implemented.'",
+    "promotion:check": "test -f infra/README.md && echo 'Promotion placeholder: production deployment remains blocked until HIPAA-eligible vendors and signed BAAs are confirmed.'",
     "preview": "npm run preview --workspace @clinic/patient-web"
   },
   "dependencies": {
