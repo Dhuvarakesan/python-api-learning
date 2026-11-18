@@ -1,5 +1,28 @@
 import { createServiceConfig } from '@clinic/config';
 import type { AppointmentRequest } from '@clinic/shared';
+export {
+  createApiServer,
+  startApiServer,
+  type ApiResponse,
+  type ApiServerOptions,
+  type RouteContext,
+  type RouteHandler,
+  type RouteRegistry,
+} from './server.js';
+export {
+  CORRELATION_ID_HEADER,
+  allowAnonymousAuthorization,
+  consoleStructuredLogger,
+  createRequestContext,
+  createRequestLogger,
+  requireRoles,
+  type AuthorizationHooks,
+  type AuthorizedPrincipal,
+  type RequestContext,
+  type StaffRole,
+  type StructuredLogEntry,
+  type StructuredLogger,
+} from './middleware/index.js';
 
 export interface ApiService {
   readonly name: 'clinic-api';
