@@ -10,10 +10,14 @@ export default defineConfig({
     exclude: ['tests/e2e/**', 'node_modules/**', 'dist/**'],
     passWithNoTests: true,
     setupFiles: './src/test/setup.ts',
+    clearMocks: true,
+    restoreMocks: true,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       reportsDirectory: './coverage',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/**/*.d.ts', 'src/main.tsx', 'src/test/**'],
     },
   },
 });
