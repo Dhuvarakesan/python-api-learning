@@ -1,0 +1,63 @@
+name: Quality Gates
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  quality-security:
+    name: Quality, accessibility, build, and security gates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit and integration tests
+        run: npm run test
+
+      - name: Production build
+        run: npm run build
+
+      - name: Accessibility check
+        run: npm run accessibility
+
+      - name: Dependency CVE scan
+        run: npm run dep-scan
+
+      - name: Generate SBOM
+        run: npm run sbom
+
+      - name: Upload release confidence artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-confidence-artifacts
+          path: |
+            dist/
+            coverage/
+            playwright-report/
+            sbom.cdx.json
+          if-no-files-found: ignore

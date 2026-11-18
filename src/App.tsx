@@ -1,23 +1,7 @@
-import styles from './App.module.css';
-import type { TaskStatus } from './features/tasks/types';
-
-const initialTaskStatus: TaskStatus = 'pending';
+import { AppShell } from './app/AppShell';
 
 function App() {
-  return (
-    <main className={styles.shell} aria-labelledby="app-title">
-      <section className={styles.panel}>
-        <p className={styles.eyebrow}>Todo-1</p>
-        <h1 id="app-title" className={styles.title}>
-          Todo app foundation
-        </h1>
-        <p className={styles.copy}>
-          A browser-only React and TypeScript app shell is ready for the next
-          feature task. New tasks will start as {initialTaskStatus}.
-        </p>
-      </section>
-    </main>
-  );
+  return <AppShell />;
 }
 
 export default App;

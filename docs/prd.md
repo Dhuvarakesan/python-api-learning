@@ -1,119 +1,109 @@
 # Product Requirements Document (PRD)
 
-> Requirement IDs should remain stable after approval so downstream ARD and feature specifications retain traceability.
+> Keep requirement IDs stable after approval so downstream ARD and feature specifications retain traceability.
 
 ## Document Metadata
 
-- **Product/Application:** Simple Todo Application
-- **Document ID:** PRD-TODO
+- **Product/Application:** SpendWise — Personal Expense Tracker
+- **Document ID:** PRD-SPENDWISE
 - **Version:** 0.1
 - **Status:** Draft
 - **Owner:** TBD
-- **Contributors:** TBD
-- **Last Updated:** 2026-11-12
+- **Contributors:** Product Owner, Stakeholders, PRD Agent
+- **Last Updated:** 2026-11-18
 
 ---
 
 ## 1. Executive Summary
 
-The Simple Todo Application is a lightweight browser-based internal demo for a small business. It allows a single user on one browser/device to create, view, edit, delete, search, filter, and track personal tasks with a title, description, due date, priority, and completion status.
+SpendWise is a simple browser-based personal expense tracker for one individual using one browser profile on one device. It helps the user manually record daily expenses, review monthly spending, understand category-wise spending, set a monthly budget, and export filtered expense records as CSV.
 
-The product is expected to demonstrate that useful task management can be delivered without backend APIs, backend databases, paid services, user accounts, or multi-device synchronization. Task data persists after browser refresh through browser localStorage, while the dashboard gives immediate visibility into total, pending, completed, and overdue task counts.
+The first release is intentionally small and privacy-preserving: no account, no login, no bank/payment integrations, no cloud sync, and no server-side financial data storage. Expense and budget data remain in local browser storage for the same browser profile.
 
-The initial release should remain simple and client-side, with automated quality gates plus manual acceptance checks where browser/device automation is unavailable.
+Expected value is faster expense capture, easier monthly review, clearer budget awareness, and reduced concern about sharing personal financial information with external services.
 
 ## 2. Problem Statement
 
-Small-business internal users need a simple way to remember, prioritize, and track individual tasks without losing them on browser refresh. Today, the intended demo use case requires a lightweight task list that supports core task management flows and basic task visibility without introducing operational overhead from accounts, backends, team sharing, or paid services.
+Individuals currently record small daily expenses in notebooks, chat messages, or scattered spreadsheets. This makes it difficult to know total monthly spend, identify high-spend categories, correct mistakes efficiently, and stay within a monthly budget. Users also prefer not to share personal financial information with cloud services or external financial integrations.
 
 ## 3. Product Vision
 
-The target end state is a simple, reliable, responsive, browser-only Todo application that lets a single user manage personal tasks end to end on one device, quickly understand workload status from a dashboard, and retain task data after refreshing the browser.
+SpendWise provides a clean, responsive, local-only expense tracking experience where an individual can quickly add expenses, review monthly spending, manage a monthly budget, and export records without needing an account or external financial connection.
 
 ## 4. Goals and Success Measures
 
 ### 4.1 Goals
 
-- Enable a single user to create, view, edit, delete, and update the status of tasks.
-- Enable the user to search tasks by title and filter tasks by status.
-- Display total, pending, completed, and overdue task counts on a dashboard.
-- Persist task data after browser refresh using browser localStorage only.
-- Keep the first release lightweight, client-side, and free of backend or paid-service dependencies.
-- Provide release evidence through automated quality gates and manual browser/device checks where automation is unavailable.
+- Enable quick manual capture of personal expenses with amount, date, category, and optional description.
+- Enable monthly review through filtered expense history, monthly totals, category totals, and record counts.
+- Enable one monthly budget per month with clear budget status: below, approaching, or above budget.
+- Enable CSV export of filtered expense records.
+- Preserve user privacy by storing data locally with no account, no backend storage, and no financial integrations.
 
 ### 4.2 Success Measures
 
 | ID | Measure | Baseline | Target | Measurement Method |
 |---|---|---:|---:|---|
-| KPI-001 | Must-priority functional acceptance flow pass rate | No application exists | 100% | Automated E2E tests plus manual acceptance checks where browser/device automation is unavailable |
-| KPI-002 | Persistence acceptance pass rate | No persistence exists | 100% | Automated tests verifying create, edit, delete, status change, dashboard recalculation, refresh persistence, and localStorage failure handling |
-| KPI-003 | Domain and persistence utility line coverage | No code exists | 80% | CI coverage report for domain and persistence utilities |
-| KPI-004 | High and critical dependency findings before release | No scan exists | 0 unresolved findings | CI dependency/CVE scan and documented remediation or approved risk acceptance |
-| KPI-005 | Supported browser acceptance coverage | No browser coverage exists | Core flows pass on latest stable Chrome, Edge, Firefox, Safari, mobile Safari, and mobile Chrome | Playwright coverage where supported plus manual checks where automation is unavailable |
+| KPI-001 | Must-priority acceptance test completion | Not yet implemented | All Must-priority acceptance tests pass | Product acceptance test execution covering add, edit, delete, filter, budget, export, and persistence flows |
 
 ## 5. Scope
 
 ### 5.1 In Scope
 
-- Single-user task management in one browser/device.
-- Task creation with title, description, due date, priority, and default pending status.
-- Task viewing, editing, deletion with confirmation, and status toggle between pending and completed.
-- Search by title using case-insensitive partial matching.
-- Status filters for All, Pending, and Completed.
-- Combined search and status filtering.
-- Dashboard counts for total, pending, completed, and overdue tasks.
-- Default task ordering with pending tasks first, completed tasks second, and earliest due dates first within each status group.
-- Browser localStorage persistence after browser refresh.
-- Inline validation for missing title, invalid due date, and invalid priority values.
-- Clear error handling when browser localStorage is unavailable, full, corrupted, or unreadable.
-- Basic accessibility and responsive layout for desktop and mobile browsers.
-- Static SPA delivery using React, TypeScript, and Vite.
+- Add, view, edit, and delete personal expense records.
+- Required expense fields: amount, date, and category.
+- Optional expense description with a maximum length of 120 characters.
+- Fixed initial categories: Food, Transport, Shopping, Bills, Health, Entertainment, and Other.
+- Month and category filtering.
+- Monthly summary with total expenses, record count, category-wise totals, and budget usage.
+- One monthly budget per month.
+- Budget status using an 80% threshold for “approaching budget.”
+- CSV export using currently selected filters and ISO date format `YYYY-MM-DD`.
+- Local browser persistence for expenses and monthly budgets.
+- Responsive React web application for common desktop and mobile browser viewport sizes.
 
 ### 5.2 Out of Scope
 
-- User accounts and authentication.
-- Multi-device synchronization.
-- Team sharing or collaborative task lists.
-- Teams, managers, admins, and external customer user flows.
-- Task assignment to other users.
-- Automated reminders or calendar integrations.
-- Backend APIs and backend database persistence.
-- Paid third-party UI, storage, analytics, telemetry, or infrastructure services.
-- Manager reporting or audit logs.
-- Runtime product telemetry that transmits task content.
+- Registration, login, and multi-user access.
+- Bank, UPI, card, or payment-provider integrations.
+- Cloud synchronization across devices.
+- Server-side storage of expense or budget data.
+- Shared household expenses.
+- Receipt scanning or OCR.
+- Recurring expenses and scheduled payments.
+- Investment, tax, or financial advice.
+- Custom categories in the first release.
+- CSV import in the first release.
+- Clear-all local data feature in the first release.
 
 ## 6. Personas and Users
 
-### PERSONA-001 — Individual Task User
+### PERSONA-001 — Individual Expense Tracker
 
-- **Description:** A single internal small-business user managing personal tasks in one browser/device.
-- **Primary Need:** Create and maintain a simple prioritized task list that survives browser refresh.
-- **Key Pain Point:** Important tasks and priorities can be forgotten or lost without a lightweight persistent task tool.
+- **Description:** An individual who wants to track daily personal expenses in one browser profile without connecting external accounts.
+- **Primary Need:** Record and review monthly expenses quickly and privately.
+- **Key Pain Point:** Expenses are currently scattered across notebooks, chat messages, or spreadsheets, making monthly totals and category patterns difficult to understand.
 
 ## 7. Assumptions and Dependencies
 
 ### Assumptions
 
-- ASM-001 — The initial product serves one user on one browser/device only.
-- ASM-002 — Browser localStorage is acceptable for demo persistence and no backend storage is required.
-- ASM-003 — Title is the only required task field.
-- ASM-004 — Due date, description, and priority are optional task fields.
-- ASM-005 — Overdue means a pending task with a due date before the user's current local date.
-- ASM-006 — The task priority set is Low, Medium, and High.
-- ASM-007 — Priority is display-only in the first release and does not affect ordering or dashboard counts.
-- ASM-008 — Task data is retained in localStorage until the user deletes the task or clears browser/application data.
+- ASM-001 — The first release serves one individual using one browser profile on one device.
+- ASM-002 — Local browser storage is acceptable for the first release, with the known limitation that clearing browser site data may remove records.
+- ASM-003 — INR (₹) is the required currency display for the first release.
+- ASM-004 — The initial fixed category list is sufficient for the first release.
+- ASM-005 — CSV import may be considered later but is not part of the first release.
 
 ### Dependencies
 
-- DEP-001 — The user must access the application in a browser that supports localStorage.
-- DEP-002 — The implementation must be able to read from and write to browser localStorage.
-- DEP-003 — Static hosting must serve compiled application assets over HTTPS.
-- DEP-004 — CI/CD must run install, typecheck, lint, tests, build, dependency scan, SBOM generation, and deployment smoke checks.
-- DEP-005 — Acceptance testing must cover all Must-priority flows before release.
+- DEP-001 — Availability of a React web application runtime in the target browser.
+- DEP-002 — Availability of local browser storage for expense and budget persistence.
+- DEP-003 — Product acceptance testing before release.
+- DEP-004 — Exact browser support matrix decision before final compatibility sign-off.
 
 ## 8. Functional Requirements
 
-### PRD-FR-001 — Create Task
+### PRD-FR-001 — Add Expense
 
 - **Priority:** Must
 - **Feature:** FEAT-001
@@ -121,158 +111,24 @@ The target end state is a simple, reliable, responsive, browser-only Todo applic
 
 **Requirement**
 
-The system shall allow the user to create a task with a required non-empty trimmed title, optional description, optional due date, optional priority, and an initial pending status.
+The system shall allow the user to create an expense with amount, date, category, and optional description.
 
 **Business Rationale**
 
-Task creation is the core action required for the user to remember and prioritize work.
+Manual expense capture is the core behavior needed to replace scattered tracking in notebooks, chats, and spreadsheets.
 
 **Acceptance Criteria**
 
-1. Given the user enters a non-empty title and valid optional fields, when they save the task, then the task appears in the task list.
-2. Given a newly created task, when it appears in the task list, then its status is pending by default.
-3. Given the user selects Low, Medium, or High priority, when the task is saved, then the selected priority is displayed with the task.
-4. Given the user leaves description, due date, or priority blank, when the task is saved with a valid title, then the task is created successfully.
+1. A valid expense with amount greater than zero, date, category, and optional description can be saved.
+2. The date field defaults to today when creating a new expense.
+3. Amount accepts values with up to two decimal places and rejects zero, negative values, blank values, and values with more than two decimal places.
+4. Description accepts blank input and rejects input longer than 120 characters.
+5. Validation messages appear next to the relevant invalid fields.
+6. After save, the new expense appears in the expense list and monthly summary values update.
 
 ---
 
-### PRD-FR-002 — Validate Task Form
-
-- **Priority:** Must
-- **Feature:** FEAT-001
-- **Persona:** PERSONA-001
-
-**Requirement**
-
-The system shall prevent saving a task when the title is missing after trimming whitespace, the due date is invalid when entered, or the priority is not Low, Medium, or High when selected.
-
-**Business Rationale**
-
-Validation prevents unusable task records and helps the user correct mistakes without guesswork.
-
-**Acceptance Criteria**
-
-1. Given the title field is empty or whitespace-only, when the user attempts to save, then the task is not saved.
-2. Given the title field is invalid, when the user attempts to save, then an inline error message is displayed for the title field.
-3. Given the due date contains an invalid date value, when the user attempts to save, then the task is not saved and the due date field displays inline guidance.
-4. Given the priority value is not Low, Medium, or High, when the user attempts to save, then the task is not saved and the priority field displays inline guidance.
-
----
-
-### PRD-FR-003 — View Task List
-
-- **Priority:** Must
-- **Feature:** FEAT-001
-- **Persona:** PERSONA-001
-
-**Requirement**
-
-The system shall display saved tasks in a task list showing title, description, due date, priority, and status when those values exist.
-
-**Business Rationale**
-
-The user needs a clear list of saved tasks to understand current work and task details.
-
-**Acceptance Criteria**
-
-1. Given one or more saved tasks exist, when the user views the task list, then each saved task is visible.
-2. Given a task has description, due date, priority, or status values, when the task is displayed, then those values are visible.
-3. Given no tasks exist, when the user views the task list, then an empty state is displayed instead of task rows.
-
----
-
-### PRD-FR-004 — Default Task Ordering
-
-- **Priority:** Must
-- **Feature:** FEAT-001
-- **Persona:** PERSONA-001
-
-**Requirement**
-
-The system shall order the default task list with pending tasks first, completed tasks second, and tasks sorted by earliest due date first within each status group, with tasks that have no due date last.
-
-**Business Rationale**
-
-Default ordering keeps active and time-sensitive work most visible without requiring the user to configure sorting.
-
-**Acceptance Criteria**
-
-1. Given pending and completed tasks exist, when the task list is displayed, then pending tasks appear before completed tasks.
-2. Given multiple tasks in the same status group have due dates, when the task list is displayed, then earlier due dates appear before later due dates.
-3. Given tasks in the same status group include tasks without due dates, when the task list is displayed, then tasks without due dates appear after tasks with due dates.
-4. Given two tasks differ only by priority, when the default task list is displayed, then priority does not override status or due-date ordering.
-
----
-
-### PRD-FR-005 — Edit Task
-
-- **Priority:** Must
-- **Feature:** FEAT-001
-- **Persona:** PERSONA-001
-
-**Requirement**
-
-The system shall allow the user to edit an existing task's title, description, due date, and priority.
-
-**Business Rationale**
-
-Tasks often change, so users need to update task details without deleting and recreating records.
-
-**Acceptance Criteria**
-
-1. Given an existing task, when the user opens it for editing, then its current editable values are available for modification.
-2. Given the user changes valid task values and saves, when the task list is shown, then the updated values are displayed.
-3. Given the user attempts to save an edit with a missing title, invalid due date, or invalid priority, then the edit is not saved and inline field-level errors are displayed.
-4. Given the user successfully saves an edit, when the save completes, then the user returns to the task list and dashboard counts update immediately.
-
----
-
-### PRD-FR-006 — Delete Task
-
-- **Priority:** Must
-- **Feature:** FEAT-001
-- **Persona:** PERSONA-001
-
-**Requirement**
-
-The system shall require confirmation before deleting a task and shall remove the task only after the user confirms deletion.
-
-**Business Rationale**
-
-Deletion confirmation reduces accidental loss of task data.
-
-**Acceptance Criteria**
-
-1. Given an existing task, when the user initiates deletion, then a confirmation prompt is displayed before deletion occurs.
-2. Given the user confirms deletion, when the confirmation is submitted, then the task is removed from the task list.
-3. Given the user cancels deletion, when the confirmation is dismissed, then the task remains in the task list unchanged.
-4. Given a task is deleted, when dashboard counts are displayed, then the counts reflect the deletion immediately.
-
----
-
-### PRD-FR-007 — Toggle Task Status
-
-- **Priority:** Must
-- **Feature:** FEAT-001
-- **Persona:** PERSONA-001
-
-**Requirement**
-
-The system shall allow the user to mark a task as completed or pending.
-
-**Business Rationale**
-
-Status tracking lets the user distinguish active work from finished work and drives dashboard counts and filters.
-
-**Acceptance Criteria**
-
-1. Given a pending task, when the user marks it completed, then the task status changes to completed.
-2. Given a completed task, when the user marks it pending, then the task status changes to pending.
-3. Given a task status changes, when dashboard counts and filters are displayed, then they reflect the updated status.
-
----
-
-### PRD-FR-008 — Search Tasks by Title
+### PRD-FR-002 — View Expenses
 
 - **Priority:** Must
 - **Feature:** FEAT-002
@@ -280,22 +136,46 @@ Status tracking lets the user distinguish active work from finished work and dri
 
 **Requirement**
 
-The system shall allow the user to search tasks by title using case-insensitive partial matching on title only.
+The system shall display saved expenses with date, description, category, and amount ordered by date newest first.
 
 **Business Rationale**
 
-Title search helps the user quickly find known tasks without scanning the full list.
+The user needs a clear history of recorded expenses to review spending and spot mistakes.
 
 **Acceptance Criteria**
 
-1. Given tasks with titles exist, when the user enters a partial title search term, then matching task titles are displayed.
-2. Given a task title differs only by letter case from the search term, when the user searches, then the task is included in results.
-3. Given the search term appears only in a task description and not in the title, when the user searches, then that task is not included.
-4. Given no task titles match the search term, when the user searches, then a no-results state is displayed.
+1. Each expense row or card shows date, description when present, category, and amount.
+2. Expenses are ordered by date newest first.
+3. When no expenses exist, the system shows an empty state with guidance to add an expense.
+4. Currency amounts display consistently as INR (₹).
 
 ---
 
-### PRD-FR-009 — Filter Tasks by Status
+### PRD-FR-003 — Edit Expense
+
+- **Priority:** Must
+- **Feature:** FEAT-001
+- **Persona:** PERSONA-001
+
+**Requirement**
+
+The system shall allow the user to edit an existing expense and save valid changes.
+
+**Business Rationale**
+
+Users need to correct mistakes without deleting and re-entering full expense records.
+
+**Acceptance Criteria**
+
+1. The user can open an existing expense for editing.
+2. The edit form applies the same validation rules as expense creation.
+3. Saving valid changes updates the expense record in the list.
+4. Monthly totals, category totals, record counts, and budget status refresh after save.
+5. Canceling edit leaves the original expense unchanged.
+
+---
+
+### PRD-FR-004 — Delete Expense
 
 - **Priority:** Must
 - **Feature:** FEAT-002
@@ -303,22 +183,46 @@ Title search helps the user quickly find known tasks without scanning the full l
 
 **Requirement**
 
-The system shall allow the user to filter tasks by All, Pending, and Completed status.
+The system shall allow the user to delete an expense only after confirmation.
 
 **Business Rationale**
 
-Status filtering helps the user focus on active work or review completed work.
+Deletion is destructive and should not happen accidentally.
 
 **Acceptance Criteria**
 
-1. Given the All filter is selected, when tasks exist, then pending and completed tasks are displayed.
-2. Given the Pending filter is selected, when tasks exist, then only pending tasks are displayed.
-3. Given the Completed filter is selected, when tasks exist, then only completed tasks are displayed.
-4. Given a status filter and title search are both applied, when results are shown, then only tasks matching both criteria are displayed.
+1. Selecting delete prompts the user to confirm the deletion.
+2. Confirming deletion removes the expense from the list.
+3. Canceling deletion leaves the expense unchanged.
+4. Monthly totals, category totals, record counts, and budget status refresh after confirmed deletion.
 
 ---
 
-### PRD-FR-010 — Dashboard Task Counts
+### PRD-FR-005 — Filter Expenses
+
+- **Priority:** Must
+- **Feature:** FEAT-002
+- **Persona:** PERSONA-001
+
+**Requirement**
+
+The system shall allow the user to filter expense records by calendar month and category and clear applied filters.
+
+**Business Rationale**
+
+Month and category filtering helps the user review relevant expenses and understand spending patterns.
+
+**Acceptance Criteria**
+
+1. Selecting a calendar month shows only expenses from that month.
+2. Selecting a category shows only expenses in that category.
+3. Applying month and category together shows only records matching both filters.
+4. Clearing filters restores the unfiltered expense list.
+5. When no records match filters, the system shows an empty state explaining that no records match.
+
+---
+
+### PRD-FR-006 — Monthly Summary
 
 - **Priority:** Must
 - **Feature:** FEAT-003
@@ -326,23 +230,23 @@ Status filtering helps the user focus on active work or review completed work.
 
 **Requirement**
 
-The system shall display dashboard counts for total tasks, pending tasks, completed tasks, and overdue tasks.
+The system shall show a monthly summary for the selected month including total expenses, number of records, category-wise totals, and budget used or remaining when a budget exists.
 
 **Business Rationale**
 
-Dashboard counts give the user immediate visibility into workload and progress.
+The user needs to understand total monthly spending and which categories account for most spending without manual calculations.
 
 **Acceptance Criteria**
 
-1. Given saved tasks exist, when the dashboard is displayed, then total count equals the number of saved tasks.
-2. Given saved tasks exist, when the dashboard is displayed, then pending count equals the number of tasks with pending status.
-3. Given saved tasks exist, when the dashboard is displayed, then completed count equals the number of tasks with completed status.
-4. Given pending tasks with due dates before the user's current local date exist, when the dashboard is displayed, then overdue count equals the number of those tasks.
-5. Given completed tasks with due dates before the user's current local date exist, when the dashboard is displayed, then those tasks are not included in the overdue count.
+1. The selected month summary shows total expense amount for that month.
+2. The selected month summary shows the number of expense records for that month.
+3. The selected month summary shows totals grouped by category for that month.
+4. If a budget exists for the selected month, the summary shows amount used and amount remaining or exceeded.
+5. Summary values update after add, edit, delete, or month selection changes.
 
 ---
 
-### PRD-FR-011 — Persist Tasks After Browser Refresh
+### PRD-FR-007 — Monthly Budget
 
 - **Priority:** Must
 - **Feature:** FEAT-004
@@ -350,287 +254,265 @@ Dashboard counts give the user immediate visibility into workload and progress.
 
 **Requirement**
 
-The system shall persist task data in browser localStorage so saved tasks remain available after browser refresh.
+The system shall allow the user to set or update one budget per month and show whether spending is below, approaching, or above budget.
 
 **Business Rationale**
 
-Persistence after refresh is required to solve the core pain of not losing tasks during normal browser use.
+Budget tracking helps the user monitor spending against a monthly limit.
 
 **Acceptance Criteria**
 
-1. Given a task has been saved, when the user refreshes the browser, then the task remains visible after reload.
-2. Given a task has been edited, deleted, or status-changed, when the user refreshes the browser, then the latest saved task state is preserved.
-3. Given dashboard counts existed before refresh, when the user refreshes the browser, then counts are recalculated from persisted task data.
+1. The user can save one budget amount for a selected month.
+2. Updating the budget for a month replaces the previous budget for that month.
+3. Budget amount rejects blank, zero, negative, and more-than-two-decimal-place values.
+4. Spending below 80% of the budget displays as below budget.
+5. Spending at or above 80% and at or below 100% of the budget displays as approaching budget.
+6. Spending above 100% of the budget displays as above budget.
 
 ---
 
-### PRD-FR-012 — Local Storage Failure Handling
+### PRD-FR-008 — Export Records as CSV
 
 - **Priority:** Must
-- **Feature:** FEAT-004
+- **Feature:** FEAT-005
 - **Persona:** PERSONA-001
 
 **Requirement**
 
-The system shall show a clear error when browser localStorage is unavailable, full, corrupted, or unreadable and task data cannot be loaded or saved reliably.
+The system shall export expense records as CSV using the currently selected month and category filters.
 
 **Business Rationale**
 
-The user must know when persistence is not working so they do not assume tasks will survive refresh.
+CSV export lets the user keep a copy of records or review them outside the app without requiring cloud sync.
 
 **Acceptance Criteria**
 
-1. Given browser localStorage is unavailable, when the user attempts to save task data, then a clear persistence error is displayed.
-2. Given browser localStorage is full, when the user attempts to save task data, then a clear persistence error is displayed.
-3. Given a persistence error occurs during save, when the user views the app, then the app does not indicate that unsaved changes were persisted successfully.
-4. Given saved localStorage data is corrupted or unreadable on app load, when the app initializes, then a clear error is displayed and an empty task list is loaded without automatically overwriting the existing stored data.
+1. Exported CSV includes only records matching the currently selected month and category filters.
+2. Exported CSV includes date, description, category, and amount columns.
+3. Exported dates use ISO format `YYYY-MM-DD`.
+4. If no records match the selected filters, the system explains that there is nothing to export.
+5. The system provides visible feedback after a successful export action.
+
+---
+
+### PRD-FR-009 — Local Persistence
+
+- **Priority:** Must
+- **Feature:** FEAT-006
+- **Persona:** PERSONA-001
+
+**Requirement**
+
+The system shall persist expenses and monthly budgets locally in the same browser profile after refresh or reopening the app.
+
+**Business Rationale**
+
+The app must remain useful across sessions while preserving the no-account, local-only privacy model.
+
+**Acceptance Criteria**
+
+1. Saved expenses remain available after page refresh in the same browser profile.
+2. Saved monthly budgets remain available after page refresh in the same browser profile.
+3. Saved expenses and budgets remain available after reopening the app in the same browser profile when browser storage has not been cleared.
+4. The app communicates that clearing browser site data may remove locally stored records.
 
 ## 9. Non-Functional Requirements
 
-### PRD-NFR-001 — Basic Accessibility
-
-- **Category:** Accessibility
-- **Priority:** Must
-
-**Requirement**
-
-The system shall support basic accessibility by providing keyboard-operable task flows, visible focus indication, and visible labels for task form fields.
-
-**Acceptance Criteria**
-
-1. A user can complete create, edit, delete confirmation, status toggle, search, and filter flows using keyboard input only.
-2. Interactive controls show a visible focus state when focused by keyboard navigation.
-3. Title, description, due date, and priority inputs each have visible labels.
-
----
-
-### PRD-NFR-002 — Responsive Layout
-
-- **Category:** Accessibility
-- **Priority:** Must
-
-**Requirement**
-
-The system shall provide a responsive layout usable in desktop and mobile browsers.
-
-**Acceptance Criteria**
-
-1. Dashboard counts, task list, task form, search, and filters remain visible and usable in desktop browser testing.
-2. Dashboard counts, task list, task form, search, and filters remain visible and usable in mobile browser testing.
-3. Core flows do not require horizontal scrolling in mobile browser testing.
-
----
-
-### PRD-NFR-003 — Client-Side Privacy Boundary
+### PRD-NFR-001 — Local-Only Privacy
 
 - **Category:** Privacy
 - **Priority:** Must
 
 **Requirement**
 
-The system shall store task data only in browser localStorage for the initial version and shall not transmit task data to a backend service, analytics service, telemetry service, or third-party storage service.
+The system shall not require account creation, authentication, financial integrations, or server-side storage for expense and budget data in the first release.
 
 **Acceptance Criteria**
 
-1. Creating, editing, deleting, searching, filtering, and refreshing tasks can be completed without a backend API call.
-2. Task data remains scoped to browser localStorage for the application origin.
-3. Task titles, descriptions, due dates, priorities, and statuses are not intentionally sent to remote services.
+1. A user can complete all Must-priority flows without signing up or logging in.
+2. The app does not request bank, UPI, card, payment-provider, or external financial account connections.
+3. Expense and budget data are stored locally in the browser profile and are not sent to server-side storage by product functionality.
 
----
+### PRD-NFR-002 — Responsive Usability
 
-### PRD-NFR-004 — Client-Side Interaction Performance
-
-- **Category:** Performance
+- **Category:** Accessibility
 - **Priority:** Must
 
 **Requirement**
 
-The system shall complete create, edit, delete, status toggle, search, filter, sort, and dashboard count updates within 200 ms for up to 500 stored tasks on supported browsers.
+The system shall keep core expense, budget, filter, and export actions usable on common desktop and mobile browser viewport sizes.
 
 **Acceptance Criteria**
 
-1. Automated performance-oriented tests verify domain utility operations complete within 200 ms using a 500-task dataset.
-2. Representative E2E checks verify core interactions complete within 200 ms using a seeded 500-task dataset on supported automation targets.
+1. Add expense, view expenses, filter expenses, set budget, and export actions are reachable on common phone and laptop viewport sizes.
+2. Important actions are not hidden behind inaccessible controls on narrow screens.
+3. The exact browser and viewport support matrix is documented before final compatibility sign-off.
 
----
+### PRD-NFR-003 — Accessible Core Controls
 
-### PRD-NFR-005 — Supported Browser Reliability
-
-- **Category:** Availability
+- **Category:** Accessibility
 - **Priority:** Must
 
 **Requirement**
 
-The system shall load and execute core acceptance flows successfully on the latest stable Chrome, Edge, Firefox, Safari, mobile Safari, and mobile Chrome browsers.
+The system shall provide clear labels and keyboard-operable controls for core user flows.
 
 **Acceptance Criteria**
 
-1. Automated browser tests pass for supported browsers where CI automation is available.
-2. Manual acceptance checks pass for supported browser/device combinations where automation is unavailable.
+1. Form fields for amount, date, category, description, and budget have visible labels.
+2. Save, cancel, edit, delete, filter, clear filter, and export controls can be reached and operated with a keyboard.
+3. Validation feedback is associated with the relevant field and visible near that field.
 
----
+### PRD-NFR-004 — Interaction Feedback
 
-### PRD-NFR-006 — Dependency Security Hygiene
-
-- **Category:** Security
-- **Priority:** Must
+- **Category:** Observability
+- **Priority:** Should
 
 **Requirement**
 
-The system shall block release when high or critical dependency/CVE findings are unresolved and shall generate an SBOM during CI/CD.
+The system shall provide visible feedback after save, update, delete, and export actions.
 
 **Acceptance Criteria**
 
-1. CI dependency scanning reports zero unresolved high or critical findings before release.
-2. CI generates an SBOM for the application dependencies/build before release.
-
----
-
-### PRD-NFR-007 — Input Rendering Safety
-
-- **Category:** Security
-- **Priority:** Must
-
-**Requirement**
-
-The system shall render user-entered task content as escaped text and shall not use unsafe raw HTML injection for task content.
-
-**Acceptance Criteria**
-
-1. User-entered title and description content renders as text rather than executable HTML.
-2. The implementation does not use dangerouslySetInnerHTML or equivalent unsafe HTML injection for task content.
+1. After a successful add, edit, delete, or export action, the user sees visible confirmation or an observable UI update.
+2. Failed validation prevents save and shows actionable field-level feedback.
 
 ## 10. User Journeys
 
-### JOURNEY-001 — Create and Persist a Task
+### JOURNEY-001 — Add and Review an Expense
 
-1. The user opens the Todo application.
-2. The user creates a task with a title and optional task details.
-3. The system saves the task, clears the create form, displays the task in the task list, and updates dashboard counts.
-4. The user refreshes the browser.
-5. The task remains visible after refresh and dashboard counts are recalculated.
+1. The user opens SpendWise in a browser.
+2. The user selects the add expense action.
+3. The user enters amount, date, category, and optional description.
+4. The user saves the expense.
+5. The expense appears in the list and the monthly summary updates.
 
-**Related Requirements:** PRD-FR-001, PRD-FR-002, PRD-FR-003, PRD-FR-010, PRD-FR-011, PRD-NFR-003
+**Related Requirements:** PRD-FR-001, PRD-FR-002, PRD-FR-006, PRD-FR-009, PRD-NFR-001, PRD-NFR-003
 
-### JOURNEY-002 — Manage Task Status and Visibility
+### JOURNEY-002 — Correct an Expense Mistake
 
-1. The user views the task list.
-2. The user marks a pending task as completed.
-3. The system updates the task status and dashboard counts.
-4. The user filters the list to Completed.
-5. The completed task is visible in the filtered result.
+1. The user finds an existing expense in the expense history.
+2. The user selects edit.
+3. The user changes one or more fields and saves.
+4. The expense list and summary values reflect the updated record.
 
-**Related Requirements:** PRD-FR-007, PRD-FR-009, PRD-FR-010
+**Related Requirements:** PRD-FR-003, PRD-FR-006, PRD-NFR-004
 
-### JOURNEY-003 — Find and Update a Task
+### JOURNEY-003 — Review Monthly Spending by Category
 
-1. The user searches for a task using a partial title.
-2. The system displays tasks with matching titles.
-3. The user edits a matching task.
-4. The system validates and saves the updated task.
-5. The user returns to the task list and the updated task details appear immediately.
+1. The user selects a calendar month.
+2. The user optionally selects a category filter.
+3. The app displays matching expenses.
+4. The monthly summary displays totals and category-wise spending for the selected month.
 
-**Related Requirements:** PRD-FR-005, PRD-FR-008, PRD-FR-002
+**Related Requirements:** PRD-FR-005, PRD-FR-006
 
-### JOURNEY-004 — Delete a Task Safely
+### JOURNEY-004 — Track Spending Against Budget
 
-1. The user initiates deletion for an existing task.
-2. The system shows a deletion confirmation prompt.
-3. The user confirms deletion.
-4. The system removes the task and updates the task list and dashboard counts.
+1. The user selects a month.
+2. The user sets or updates a budget amount.
+3. The app displays budget used and remaining or exceeded amount.
+4. The app displays below, approaching, or above budget status based on current monthly spend.
 
-**Related Requirements:** PRD-FR-006, PRD-FR-010, PRD-FR-011
+**Related Requirements:** PRD-FR-007, PRD-FR-006
 
-### JOURNEY-005 — Handle Persistence Problems
+### JOURNEY-005 — Export Filtered Records
 
-1. The user opens or uses the app when localStorage is unavailable, full, corrupted, or unreadable.
-2. The system displays a clear persistence error.
-3. The system avoids claiming unsaved changes were persisted successfully.
-4. If stored data is corrupted or unreadable on load, the system loads an empty task list without automatically overwriting existing storage.
+1. The user applies month and category filters as needed.
+2. The user selects export CSV.
+3. The app exports matching records with date, description, category, and amount.
+4. The app provides feedback after export or explains when there is nothing to export.
 
-**Related Requirements:** PRD-FR-012, PRD-NFR-003
+**Related Requirements:** PRD-FR-008, PRD-FR-005, PRD-NFR-004
 
 ## 11. Feature Breakdown
 
-### FEAT-001 — Task CRUD and Status Management
+### FEAT-001 — Expense Form
 
-- **Summary:** Create, view, edit, delete, validate, order, and update status for tasks.
+- **Summary:** Create and edit expenses with validation for amount, date, category, and description.
 - **Priority:** Must
-- **Related Requirements:** PRD-FR-001, PRD-FR-002, PRD-FR-003, PRD-FR-004, PRD-FR-005, PRD-FR-006, PRD-FR-007, PRD-NFR-001, PRD-NFR-002, PRD-NFR-007
-- **Expected Spec File:** `specs/FEAT-001-task-crud-and-status-management.spec.md`
+- **Related Requirements:** PRD-FR-001, PRD-FR-003, PRD-NFR-003, PRD-NFR-004
+- **Expected Spec File:** `specs/FEAT-001-expense-form.spec.md`
 
-### FEAT-002 — Search and Filtering
+### FEAT-002 — Expense History and Filters
 
-- **Summary:** Search tasks by title and filter tasks by status.
+- **Summary:** Display expenses newest first, support delete confirmation, filter by month and category, and show empty states.
 - **Priority:** Must
-- **Related Requirements:** PRD-FR-008, PRD-FR-009, PRD-NFR-001, PRD-NFR-002, PRD-NFR-004
-- **Expected Spec File:** `specs/FEAT-002-search-and-filtering.spec.md`
+- **Related Requirements:** PRD-FR-002, PRD-FR-004, PRD-FR-005, PRD-NFR-003
+- **Expected Spec File:** `specs/FEAT-002-expense-history-and-filters.spec.md`
 
-### FEAT-003 — Dashboard Counts
+### FEAT-003 — Monthly Summary
 
-- **Summary:** Display total, pending, completed, and overdue task counts.
+- **Summary:** Show monthly expense totals, record count, category totals, and budget usage when available.
 - **Priority:** Must
-- **Related Requirements:** PRD-FR-010, PRD-NFR-002, PRD-NFR-004
-- **Expected Spec File:** `specs/FEAT-003-dashboard-counts.spec.md`
+- **Related Requirements:** PRD-FR-006, PRD-FR-007
+- **Expected Spec File:** `specs/FEAT-003-monthly-summary.spec.md`
 
-### FEAT-004 — Local Persistence
+### FEAT-004 — Monthly Budget
 
-- **Summary:** Persist task data in browser localStorage and handle storage failures clearly.
+- **Summary:** Set or update one monthly budget and display below, approaching, or above budget status.
 - **Priority:** Must
-- **Related Requirements:** PRD-FR-011, PRD-FR-012, PRD-NFR-003
-- **Expected Spec File:** `specs/FEAT-004-local-persistence.spec.md`
+- **Related Requirements:** PRD-FR-007, PRD-NFR-004
+- **Expected Spec File:** `specs/FEAT-004-monthly-budget.spec.md`
 
-### FEAT-005 — Static SPA Delivery and Quality Gates
+### FEAT-005 — CSV Export
 
-- **Summary:** Build, test, scan, and deploy the browser-only React/TypeScript/Vite application as static assets.
+- **Summary:** Export currently filtered expense records as CSV using ISO date format.
 - **Priority:** Must
-- **Related Requirements:** PRD-NFR-005, PRD-NFR-006
-- **Expected Spec File:** `specs/FEAT-005-static-spa-delivery-and-quality-gates.spec.md`
+- **Related Requirements:** PRD-FR-008, PRD-FR-005, PRD-NFR-004
+- **Expected Spec File:** `specs/FEAT-005-csv-export.spec.md`
+
+### FEAT-006 — Local Persistence
+
+- **Summary:** Persist expenses and monthly budgets in local browser storage for the same browser profile.
+- **Priority:** Must
+- **Related Requirements:** PRD-FR-009, PRD-NFR-001
+- **Expected Spec File:** `specs/FEAT-006-local-persistence.spec.md`
 
 ## 12. Constraints
 
-- CON-001 — The product is for a small business and must remain lightweight for the initial demo.
-- CON-002 — The initial version must use browser localStorage only for task persistence.
-- CON-003 — The initial version must not require backend APIs, backend databases, paid services, or multi-device synchronization.
-- CON-004 — The initial release has no fixed date and should ship when all Must-priority requirements pass acceptance testing and release gates.
-- CON-005 — The initial product is limited to a single user on one browser/device.
-- CON-006 — Task data must not be transmitted to backend APIs, analytics services, telemetry services, or third-party storage services.
-- CON-007 — The implementation stack is a browser-only single-page application using React, TypeScript, and Vite.
-- CON-008 — Static application assets must be served over HTTPS through GitHub Pages or equivalent static hosting.
+- CON-001 — The first release must remain small and simple for a small-business delivery context.
+- CON-002 — The first release must be a browser-based React application.
+- CON-003 — Expense and budget data must remain local to the browser profile in the first release.
+- CON-004 — The first release must not include account creation, login, cloud sync, or external financial integrations.
+- CON-005 — Currency display must be INR (₹).
+- CON-006 — Amounts must be positive and support up to two decimal places.
+- CON-007 — The first release must use the fixed categories Food, Transport, Shopping, Bills, Health, Entertainment, and Other.
+- CON-008 — CSV export dates must use `YYYY-MM-DD` format.
+- CON-009 — Release can occur when Must-priority requirements pass acceptance testing.
 
 ## 13. Risks
 
 | ID | Risk | Impact | Likelihood | Mitigation |
 |---|---|---|---|---|
-| RISK-001 | Browser localStorage is unavailable, full, cleared, corrupted, or blocked | High | Medium | Show clear persistence errors, avoid claiming failed saves succeeded, test failure paths, and keep data scoped to one browser/device |
-| RISK-002 | Users expect multi-device sync or accounts despite single-device scope | Medium | Medium | State scope clearly in product copy, PRD, release notes, and training/support materials |
-| RISK-003 | Browser/device differences cause inconsistent behavior | Medium | Medium | Gate release on latest stable supported browser checks with manual coverage where automation is unavailable |
-| RISK-004 | Dependency vulnerabilities delay release | Medium | Low | Run CI dependency scans, block unresolved high/critical findings, and generate SBOM evidence |
-| RISK-005 | Task content is exposed through unsafe rendering or remote logging | High | Low | Render content as escaped text, prohibit unsafe HTML injection, and prohibit task data transmission to remote services |
+| RISK-001 | Users may lose data if they clear browser site data. | High | Medium | Communicate that locally stored records may be removed when browser site data is cleared. |
+| RISK-002 | Local-only storage prevents access across devices. | Medium | High | Keep cloud sync explicitly out of scope and set user expectations in product copy. |
+| RISK-003 | Exact browser support expectations may be unclear. | Medium | Medium | Resolve the exact browser support matrix before final compatibility sign-off. |
+| RISK-004 | Fixed categories may not match every user's spending habits. | Medium | Medium | Keep custom categories as a later-release candidate outside first-release scope. |
 
 ## 14. Open Questions
 
 | ID | Question | Owner | Status | Decision/Due Date |
 |---|---|---|---|---|
-| OQ-001 | No open product questions at draft time. | Product Owner | Closed | 2026-11-12 |
+| OQ-001 | What exact desktop and mobile browser versions are supported for final compatibility sign-off? | Product Owner | Open | TBD |
+| OQ-002 | Should CSV import be supported in a later release? | Product Owner | Open | TBD |
+| OQ-003 | Should custom categories be supported in a later release? | Product Owner | Open | TBD |
 
 ## 15. Release and Rollout Considerations
 
-- **Target Release:** No fixed date; release when all Must-priority requirements, automated quality gates, and required manual browser/device checks pass.
-- **Rollout Approach:** Small pilot with one internal user before broader internal use.
-- **Migration Considerations:** No migration is required for the initial release because no prior application or backend data source exists; localStorage key versioning should reserve a path for future schema migration if needed.
-- **Training/Support Considerations:** Provide lightweight guidance that task data is stored only in the user's browser/device, is not synced across devices, and may be lost if browser/application data is cleared.
+- **Target Release:** As soon as Must-priority requirements pass acceptance testing.
+- **Rollout Approach:** Full release for the single-user local app once accepted.
+- **Migration Considerations:** No migration is required for the first release because there is no existing product data source; locally stored data remains browser-profile-specific.
+- **Training/Support Considerations:** Provide simple in-app guidance for empty states, validation errors, CSV export, and the limitation that clearing browser site data may remove locally stored records.
 
 ## 16. Definition of Product Success
 
 The product is successful when:
 
-- A single internal user can create, view, edit, delete, search, filter, status-toggle, and track tasks without errors.
-- Saved task data persists after browser refresh in the same browser/device.
-- Dashboard counts accurately show total, pending, completed, and overdue tasks.
-- LocalStorage failure and corrupted/unreadable data states are clear to the user and do not falsely claim successful persistence.
-- Automated quality gates pass, including typecheck, lint, unit/component tests, E2E tests, production build, dependency scan, SBOM generation, and deployment smoke test.
-- Supported browser/device checks pass, with manual checks where automation is unavailable.
+- A user can add, view, edit, delete, filter, budget, export, and retain expenses locally according to Must-priority acceptance criteria.
+- Monthly and category totals match the visible records for the selected month and filters.
+- CSV export contains the filtered records with `YYYY-MM-DD` dates.
+- The app preserves the first-release privacy model: no account, no financial integration, and local browser storage only.
 - All Must-priority requirements are accepted.
 - Required quality, security, and compliance outcomes are evidenced.
 
