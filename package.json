@@ -1,19 +1,24 @@
 {
-  "name": "todo-1",
+  "name": "clinic-booking-app",
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
+    "dev": "npm run dev --workspace @clinic/patient-web",
+    "typecheck": "tsc -b --pretty false",
     "lint": "eslint . --ext .ts,.tsx --report-unused-disable-directives --max-warnings 0",
     "test": "vitest run",
     "coverage": "vitest run --coverage",
     "e2e": "playwright test",
-    "build": "npm run typecheck && vite build",
+    "build": "npm run build --workspaces --if-present",
     "audit": "npm audit --audit-level=high",
     "sbom": "cyclonedx-npm --output-file sbom.cdx.json",
-    "preview": "vite preview"
+    "preview": "npm run preview --workspace @clinic/patient-web"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^5.1.0",
