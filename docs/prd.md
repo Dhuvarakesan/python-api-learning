@@ -1,141 +1,134 @@
 # Product Requirements Document (PRD)
 
-> Requirement source: “Our clinic loses bookings because patients can only book by phone during office hours. We want patients to book, reschedule and get reminders online. Staff should see the day's schedule in one place.”
+> Keep requirement IDs stable after approval so downstream ARD and feature specifications retain traceability.
 
 ## Document Metadata
 
-- **Product/Application:** Online Patient Scheduling and Reminders
-- **Document ID:** PRD-OPSR
+- **Product/Application:** SpendWise — Personal Expense Tracker
+- **Document ID:** PRD-SPENDWISE
 - **Version:** 0.1
 - **Status:** Draft
 - **Owner:** TBD
-- **Contributors:** TBD
+- **Contributors:** Product Owner, Stakeholders, PRD Agent
 - **Last Updated:** 2026-11-18
 
 ---
 
 ## 1. Executive Summary
 
-The clinic needs an online scheduling capability because patients currently can only book by phone during office hours, leading to lost bookings. Staff-reported missed calls and patient complaints indicate the problem exists, although quantified baseline data is not yet available.
+SpendWise is a simple browser-based personal expense tracker for one individual using one browser profile on one device. It helps the user manually record daily expenses, review monthly spending, understand category-wise spending, set a monthly budget, and export filtered expense records as CSV.
 
-This product will let existing and new patients book selected appointment types online, reschedule eligible appointments within clinic-configured rules, and receive SMS and email reminders. Front-desk staff will be able to view the day’s schedule in one place, including appointment status and reminder/contact status.
+The first release is intentionally small and privacy-preserving: no account, no login, no bank/payment integrations, no cloud sync, and no server-side financial data storage. Expense and budget data remain in local browser storage for the same browser profile.
 
-The first release will prioritize reducing lost bookings caused by phone-only scheduling while maintaining HIPAA-aligned controls appropriate for a small healthcare business.
+Expected value is faster expense capture, easier monthly review, clearer budget awareness, and reduced concern about sharing personal financial information with external services.
 
 ## 2. Problem Statement
 
-Patients who want to schedule outside office hours cannot complete bookings without calling the clinic during business hours. This creates missed booking opportunities for patients and front-desk staff, and the clinic has staff-reported missed calls and patient complaints with no quantified baseline yet. Staff also need a consolidated view of the day’s schedule to manage appointments and follow-up efficiently.
+Individuals currently record small daily expenses in notebooks, chat messages, or scattered spreadsheets. This makes it difficult to know total monthly spend, identify high-spend categories, correct mistakes efficiently, and stay within a monthly budget. Users also prefer not to share personal financial information with cloud services or external financial integrations.
 
 ## 3. Product Vision
 
-Create a HIPAA-aligned, mobile-first online scheduling experience where eligible patients can book and reschedule selected appointment types without calling the clinic, receive compliant reminders, and enable staff to manage the day’s schedule from one consolidated operational view.
+SpendWise provides a clean, responsive, local-only expense tracking experience where an individual can quickly add expenses, review monthly spending, manage a monthly budget, and export records without needing an account or external financial connection.
 
 ## 4. Goals and Success Measures
 
 ### 4.1 Goals
 
-- Reduce lost bookings caused by phone-only office-hour scheduling.
-- Enable existing and new patients to book selected appointment types online with safeguards before confirmation.
-- Allow patients to reschedule eligible appointments up to a clinic-configured cutoff time.
-- Send SMS and email reminders with consent, opt-out, and staff-visible delivery/failure status.
-- Give front-desk staff a consolidated view of the day’s schedule.
-- Maintain HIPAA-aligned handling of protected health information.
+- Enable quick manual capture of personal expenses with amount, date, category, and optional description.
+- Enable monthly review through filtered expense history, monthly totals, category totals, and record counts.
+- Enable one monthly budget per month with clear budget status: below, approaching, or above budget.
+- Enable CSV export of filtered expense records.
+- Preserve user privacy by storing data locally with no account, no backend storage, and no financial integrations.
 
 ### 4.2 Success Measures
 
 | ID | Measure | Baseline | Target | Measurement Method |
 |---|---|---:|---:|---|
-| KPI-001 | Online booking adoption | Not quantified; see OQ-001 | Not set; see OQ-001 | Percentage of eligible appointments booked online during the measurement period |
-| KPI-002 | Reduction in missed scheduling calls | Not quantified; see OQ-001 | Not set; see OQ-001 | Comparison of missed scheduling calls before and after launch |
-| KPI-003 | Reminder delivery rate | Not quantified; see OQ-001 | Not set; see OQ-001 | Percentage of scheduled reminders successfully delivered by channel |
-| KPI-004 | Staff schedule usage | Not quantified; see OQ-001 | Not set; see OQ-001 | Count or percentage of front-desk staff using the day schedule view during operating days |
+| KPI-001 | Must-priority acceptance test completion | Not yet implemented | All Must-priority acceptance tests pass | Product acceptance test execution covering add, edit, delete, filter, budget, export, and persistence flows |
 
 ## 5. Scope
 
 ### 5.1 In Scope
 
-- Online booking for appointment types manually marked by staff as eligible for online booking.
-- Online booking for both existing and new patients.
-- Required new-patient intake details and insurance information before confirming an available slot.
-- Patient rescheduling for eligible appointments up to a clinic-configured cutoff time.
-- SMS and email appointment reminders.
-- Reminder consent capture, opt-out support, and delivery/failure visibility for staff.
-- Staff day schedule view with patient, provider, time, status, appointment type, and contact/reminder status.
-- Clinic administrator controls for online-bookable appointment types and rescheduling cutoff rules.
-- Integration with the existing scheduling/EHR system if available; import/export as an interim dependency if integration is not available.
+- Add, view, edit, and delete personal expense records.
+- Required expense fields: amount, date, and category.
+- Optional expense description with a maximum length of 120 characters.
+- Fixed initial categories: Food, Transport, Shopping, Bills, Health, Entertainment, and Other.
+- Month and category filtering.
+- Monthly summary with total expenses, record count, category-wise totals, and budget usage.
+- One monthly budget per month.
+- Budget status using an 80% threshold for “approaching budget.”
+- CSV export using currently selected filters and ISO date format `YYYY-MM-DD`.
+- Local browser persistence for expenses and monthly budgets.
+- Responsive React web application for common desktop and mobile browser viewport sizes.
 
 ### 5.2 Out of Scope
 
-- Payments.
-- Telehealth visits.
-- Waitlist management.
-- Room assignments.
-- Clinical triage.
-- Provider capacity planning or advanced scheduling optimization.
-- Voice call reminders.
+- Registration, login, and multi-user access.
+- Bank, UPI, card, or payment-provider integrations.
+- Cloud synchronization across devices.
+- Server-side storage of expense or budget data.
+- Shared household expenses.
+- Receipt scanning or OCR.
+- Recurring expenses and scheduled payments.
+- Investment, tax, or financial advice.
+- Custom categories in the first release.
+- CSV import in the first release.
+- Clear-all local data feature in the first release.
 
 ## 6. Personas and Users
 
-### PERSONA-001 — Patient
+### PERSONA-001 — Individual Expense Tracker
 
-- **Description:** Existing or new clinic patient who wants to book or reschedule eligible appointments online.
-- **Primary Need:** Complete scheduling tasks without calling during office hours.
-- **Key Pain Point:** Phone-only scheduling creates friction and prevents booking outside office hours.
-
-### PERSONA-002 — Front-Desk Staff
-
-- **Description:** Clinic staff responsible for managing daily appointments, scheduling follow-up, and handling patient communication.
-- **Primary Need:** See the day’s schedule and appointment communication status in one place.
-- **Key Pain Point:** Missed calls, manual scheduling work, and fragmented schedule visibility create operational burden.
-
-### PERSONA-003 — Clinic Administrator
-
-- **Description:** Clinic operator or manager responsible for scheduling policies, eligible appointment types, compliance, and rollout configuration.
-- **Primary Need:** Control which appointment types are bookable online and maintain HIPAA-aligned scheduling operations.
-- **Key Pain Point:** Needs patient convenience without exposing inappropriate appointment types or compliance risk.
+- **Description:** An individual who wants to track daily personal expenses in one browser profile without connecting external accounts.
+- **Primary Need:** Record and review monthly expenses quickly and privately.
+- **Key Pain Point:** Expenses are currently scattered across notebooks, chat messages, or spreadsheets, making monthly totals and category patterns difficult to understand.
 
 ## 7. Assumptions and Dependencies
 
 ### Assumptions
 
-- ASM-001 — The clinic has appointment types that can be safely marked as eligible for online booking without clinical triage (assumption).
-- ASM-002 — Patients can provide required intake details and insurance information online before confirmation (assumption).
-- ASM-003 — SMS and email reminder vendors can support HIPAA-aligned operations with required business associate agreements where applicable (assumption).
-- ASM-004 — The clinic can define a rescheduling cutoff time before launch (assumption).
+- ASM-001 — The first release serves one individual using one browser profile on one device.
+- ASM-002 — Local browser storage is acceptable for the first release, with the known limitation that clearing browser site data may remove records.
+- ASM-003 — INR (₹) is the required currency display for the first release.
+- ASM-004 — The initial fixed category list is sufficient for the first release.
+- ASM-005 — CSV import may be considered later but is not part of the first release.
 
 ### Dependencies
 
-- DEP-001 — Existing scheduling/EHR system capabilities determine whether launch uses integration or interim import/export.
-- DEP-002 — HIPAA-aligned vendors and business associate agreements are required for services that handle protected health information.
-- DEP-003 — Staff must configure which appointment types are eligible for online booking.
-- DEP-004 — Clinic policy must define the rescheduling cutoff time.
+- DEP-001 — Availability of a React web application runtime in the target browser.
+- DEP-002 — Availability of local browser storage for expense and budget persistence.
+- DEP-003 — Product acceptance testing before release.
+- DEP-004 — Exact browser support matrix decision before final compatibility sign-off.
 
 ## 8. Functional Requirements
 
-### PRD-FR-001 — Configure Online-Bookable Appointment Types
+### PRD-FR-001 — Add Expense
 
 - **Priority:** Must
 - **Feature:** FEAT-001
-- **Persona:** PERSONA-003
+- **Persona:** PERSONA-001
 
 **Requirement**
 
-The system shall allow clinic administrators or authorized staff to mark appointment types as eligible or ineligible for online booking.
+The system shall allow the user to create an expense with amount, date, category, and optional description.
 
 **Business Rationale**
 
-The first release supports selected appointment types only, and staff need control to prevent inappropriate appointment types from being booked online.
+Manual expense capture is the core behavior needed to replace scattered tracking in notebooks, chats, and spreadsheets.
 
 **Acceptance Criteria**
 
-1. An authorized user can mark an appointment type as online-bookable.
-2. An authorized user can remove online-bookable status from an appointment type.
-3. Patients only see appointment types marked as online-bookable in the patient booking flow.
-4. Appointment types not marked as online-bookable cannot be selected by patients online.
+1. A valid expense with amount greater than zero, date, category, and optional description can be saved.
+2. The date field defaults to today when creating a new expense.
+3. Amount accepts values with up to two decimal places and rejects zero, negative values, blank values, and values with more than two decimal places.
+4. Description accepts blank input and rejects input longer than 120 characters.
+5. Validation messages appear next to the relevant invalid fields.
+6. After save, the new expense appears in the expense list and monthly summary values update.
 
 ---
 
-### PRD-FR-002 — Book Eligible Appointments Online
+### PRD-FR-002 — View Expenses
 
 - **Priority:** Must
 - **Feature:** FEAT-002
@@ -143,23 +136,46 @@ The first release supports selected appointment types only, and staff need contr
 
 **Requirement**
 
-The system shall allow existing and new patients to book available slots for appointment types marked as eligible for online booking.
+The system shall display saved expenses with date, description, category, and amount ordered by date newest first.
 
 **Business Rationale**
 
-Patients need a way to complete bookings outside office hours, reducing lost bookings caused by phone-only scheduling.
+The user needs a clear history of recorded expenses to review spending and spot mistakes.
 
 **Acceptance Criteria**
 
-1. A patient can select an online-bookable appointment type and view available appointment slots.
-2. A patient can submit a booking for an available slot.
-3. The system prevents booking for unavailable slots.
-4. The system prevents patient booking for appointment types not marked as online-bookable.
-5. A successfully booked appointment appears in the staff day schedule view.
+1. Each expense row or card shows date, description when present, category, and amount.
+2. Expenses are ordered by date newest first.
+3. When no expenses exist, the system shows an empty state with guidance to add an expense.
+4. Currency amounts display consistently as INR (₹).
 
 ---
 
-### PRD-FR-003 — Collect New-Patient Intake and Insurance Information
+### PRD-FR-003 — Edit Expense
+
+- **Priority:** Must
+- **Feature:** FEAT-001
+- **Persona:** PERSONA-001
+
+**Requirement**
+
+The system shall allow the user to edit an existing expense and save valid changes.
+
+**Business Rationale**
+
+Users need to correct mistakes without deleting and re-entering full expense records.
+
+**Acceptance Criteria**
+
+1. The user can open an existing expense for editing.
+2. The edit form applies the same validation rules as expense creation.
+3. Saving valid changes updates the expense record in the list.
+4. Monthly totals, category totals, record counts, and budget status refresh after save.
+5. Canceling edit leaves the original expense unchanged.
+
+---
+
+### PRD-FR-004 — Delete Expense
 
 - **Priority:** Must
 - **Feature:** FEAT-002
@@ -167,22 +183,46 @@ Patients need a way to complete bookings outside office hours, reducing lost boo
 
 **Requirement**
 
-The system shall collect required intake details and insurance information from new patients before confirming an available appointment slot.
+The system shall allow the user to delete an expense only after confirmation.
 
 **Business Rationale**
 
-New-patient bookings require safeguards before confirmation so staff have necessary intake and insurance information.
+Deletion is destructive and should not happen accidentally.
 
 **Acceptance Criteria**
 
-1. A new patient cannot complete confirmation until required intake fields are submitted.
-2. A new patient cannot complete confirmation until required insurance information is submitted.
-3. A completed new-patient booking includes submitted intake and insurance information for staff review.
-4. Existing patients are not forced through the new-patient intake flow unless identified as new patients.
+1. Selecting delete prompts the user to confirm the deletion.
+2. Confirming deletion removes the expense from the list.
+3. Canceling deletion leaves the expense unchanged.
+4. Monthly totals, category totals, record counts, and budget status refresh after confirmed deletion.
 
 ---
 
-### PRD-FR-004 — Reschedule Eligible Appointments Online
+### PRD-FR-005 — Filter Expenses
+
+- **Priority:** Must
+- **Feature:** FEAT-002
+- **Persona:** PERSONA-001
+
+**Requirement**
+
+The system shall allow the user to filter expense records by calendar month and category and clear applied filters.
+
+**Business Rationale**
+
+Month and category filtering helps the user review relevant expenses and understand spending patterns.
+
+**Acceptance Criteria**
+
+1. Selecting a calendar month shows only expenses from that month.
+2. Selecting a category shows only expenses in that category.
+3. Applying month and category together shows only records matching both filters.
+4. Clearing filters restores the unfiltered expense list.
+5. When no records match filters, the system shows an empty state explaining that no records match.
+
+---
+
+### PRD-FR-006 — Monthly Summary
 
 - **Priority:** Must
 - **Feature:** FEAT-003
@@ -190,45 +230,23 @@ New-patient bookings require safeguards before confirmation so staff have necess
 
 **Requirement**
 
-The system shall allow patients to reschedule eligible appointments up to a clinic-configured cutoff time.
+The system shall show a monthly summary for the selected month including total expenses, number of records, category-wise totals, and budget used or remaining when a budget exists.
 
 **Business Rationale**
 
-Patients need self-service flexibility while the clinic needs operational control over late schedule changes.
+The user needs to understand total monthly spending and which categories account for most spending without manual calculations.
 
 **Acceptance Criteria**
 
-1. A patient can view rescheduling options for an appointment eligible for online rescheduling.
-2. A patient can move an eligible appointment to an available slot before the configured cutoff time.
-3. The system prevents patient self-service rescheduling after the configured cutoff time.
-4. The rescheduled appointment is reflected in the staff day schedule view.
-5. The system prevents rescheduling into unavailable slots.
+1. The selected month summary shows total expense amount for that month.
+2. The selected month summary shows the number of expense records for that month.
+3. The selected month summary shows totals grouped by category for that month.
+4. If a budget exists for the selected month, the summary shows amount used and amount remaining or exceeded.
+5. Summary values update after add, edit, delete, or month selection changes.
 
 ---
 
-### PRD-FR-005 — Configure Rescheduling Cutoff
-
-- **Priority:** Must
-- **Feature:** FEAT-003
-- **Persona:** PERSONA-003
-
-**Requirement**
-
-The system shall allow authorized clinic administrators or staff to configure the cutoff time for patient self-service rescheduling.
-
-**Business Rationale**
-
-The clinic must control how close to an appointment patients can make schedule changes online.
-
-**Acceptance Criteria**
-
-1. An authorized user can set a rescheduling cutoff rule.
-2. The patient rescheduling flow enforces the configured cutoff rule.
-3. Unauthorized users cannot modify the rescheduling cutoff rule.
-
----
-
-### PRD-FR-006 — Send SMS and Email Reminders
+### PRD-FR-007 — Monthly Budget
 
 - **Priority:** Must
 - **Feature:** FEAT-004
@@ -236,281 +254,265 @@ The clinic must control how close to an appointment patients can make schedule c
 
 **Requirement**
 
-The system shall send appointment reminders by SMS and email to patients who have provided the required consent for each channel.
+The system shall allow the user to set or update one budget per month and show whether spending is below, approaching, or above budget.
 
 **Business Rationale**
 
-Reminders support attendance and reduce manual reminder work while respecting consent requirements.
+Budget tracking helps the user monitor spending against a monthly limit.
 
 **Acceptance Criteria**
 
-1. The system records whether a patient has consented to SMS reminders.
-2. The system records whether a patient has consented to email reminders.
-3. The system sends SMS reminders only when SMS consent is recorded.
-4. The system sends email reminders only when email consent is recorded.
-5. The system does not include protected health information in reminder content beyond the minimum necessary.
+1. The user can save one budget amount for a selected month.
+2. Updating the budget for a month replaces the previous budget for that month.
+3. Budget amount rejects blank, zero, negative, and more-than-two-decimal-place values.
+4. Spending below 80% of the budget displays as below budget.
+5. Spending at or above 80% and at or below 100% of the budget displays as approaching budget.
+6. Spending above 100% of the budget displays as above budget.
 
 ---
 
-### PRD-FR-007 — Manage Reminder Opt-Outs and Delivery Status
-
-- **Priority:** Must
-- **Feature:** FEAT-004
-- **Persona:** PERSONA-002
-
-**Requirement**
-
-The system shall allow reminder opt-out and show reminder delivery or failure status to staff.
-
-**Business Rationale**
-
-Staff need visibility into failed communications and patients must be able to opt out of reminder channels.
-
-**Acceptance Criteria**
-
-1. A patient can opt out of SMS reminders.
-2. A patient can opt out of email reminders.
-3. Staff can see whether each reminder was delivered, failed, or not sent due to missing consent or opt-out.
-4. The system stops sending reminders through a channel after the patient opts out of that channel.
-
----
-
-### PRD-FR-008 — View the Day’s Schedule
+### PRD-FR-008 — Export Records as CSV
 
 - **Priority:** Must
 - **Feature:** FEAT-005
-- **Persona:** PERSONA-002
+- **Persona:** PERSONA-001
 
 **Requirement**
 
-The system shall provide staff with a day schedule view containing all appointments for the day with patient, provider, time, status, appointment type, and contact/reminder status.
+The system shall export expense records as CSV using the currently selected month and category filters.
 
 **Business Rationale**
 
-Front-desk staff need one place to understand the day’s schedule and manage appointment communication.
+CSV export lets the user keep a copy of records or review them outside the app without requiring cloud sync.
 
 **Acceptance Criteria**
 
-1. Staff can view all appointments scheduled for a selected day.
-2. Each appointment displays patient, provider, time, status, appointment type, and contact/reminder status.
-3. Online-booked appointments appear in the day schedule view after confirmation.
-4. Rescheduled appointments show the updated appointment time in the day schedule view.
+1. Exported CSV includes only records matching the currently selected month and category filters.
+2. Exported CSV includes date, description, category, and amount columns.
+3. Exported dates use ISO format `YYYY-MM-DD`.
+4. If no records match the selected filters, the system explains that there is nothing to export.
+5. The system provides visible feedback after a successful export action.
 
 ---
 
-### PRD-FR-009 — Connect to Existing Scheduling/EHR Workflow
+### PRD-FR-009 — Local Persistence
 
-- **Priority:** Should
+- **Priority:** Must
 - **Feature:** FEAT-006
-- **Persona:** PERSONA-002
+- **Persona:** PERSONA-001
 
 **Requirement**
 
-The system shall integrate with the existing scheduling/EHR system if available, and shall support import/export as an interim workflow if integration is not available.
+The system shall persist expenses and monthly budgets locally in the same browser profile after refresh or reopening the app.
 
 **Business Rationale**
 
-The clinic’s existing scheduling/EHR workflow is a dependency, and launch should avoid duplicate schedule management where possible.
+The app must remain useful across sessions while preserving the no-account, local-only privacy model.
 
 **Acceptance Criteria**
 
-1. If scheduling/EHR integration is available, online bookings and schedule updates synchronize with the existing scheduling/EHR workflow.
-2. If scheduling/EHR integration is not available, staff can use an import/export workflow to move schedule data between systems.
-3. The implementation approach is documented before launch as either integrated or import/export.
+1. Saved expenses remain available after page refresh in the same browser profile.
+2. Saved monthly budgets remain available after page refresh in the same browser profile.
+3. Saved expenses and budgets remain available after reopening the app in the same browser profile when browser storage has not been cleared.
+4. The app communicates that clearing browser site data may remove locally stored records.
 
 ## 9. Non-Functional Requirements
 
-### PRD-NFR-001 — HIPAA-Aligned PHI Protection
-
-- **Category:** Compliance
-- **Priority:** Must
-
-**Requirement**
-
-The system shall use HIPAA-aligned controls for protected health information, including business associate agreements with PHI-handling vendors, encryption in transit and at rest, role-based access, audit logs, and minimum necessary PHI handling.
-
-**Acceptance Criteria**
-
-1. PHI-handling vendors have business associate agreements in place before production use.
-2. PHI is encrypted in transit and at rest in production environments.
-3. Staff access is restricted by role-based permissions.
-4. Access to PHI and changes to scheduling records are captured in audit logs.
-5. Reminder content is reviewed to verify it avoids PHI beyond the minimum necessary.
-
-### PRD-NFR-002 — Patient Accessibility and Mobile Support
-
-- **Category:** Accessibility
-- **Priority:** Must
-
-**Requirement**
-
-The patient booking and rescheduling experience shall be mobile-first, responsive, and meet WCAG 2.1 AA.
-
-**Acceptance Criteria**
-
-1. Patient booking and rescheduling pages render correctly on mobile and desktop viewport sizes.
-2. Accessibility testing verifies conformance with WCAG 2.1 AA for patient-facing scheduling flows.
-3. Core booking and rescheduling tasks can be completed using keyboard navigation and assistive technology.
-
-### PRD-NFR-003 — Privacy-Conscious Reminder Content
+### PRD-NFR-001 — Local-Only Privacy
 
 - **Category:** Privacy
 - **Priority:** Must
 
 **Requirement**
 
-The system shall avoid including protected health information in SMS and email reminder content beyond the minimum necessary for appointment reminders.
+The system shall not require account creation, authentication, financial integrations, or server-side storage for expense and budget data in the first release.
 
 **Acceptance Criteria**
 
-1. SMS reminder templates do not include diagnosis, procedure details, or clinical notes.
-2. Email reminder templates do not include diagnosis, procedure details, or clinical notes.
-3. Reminder templates are reviewed before production use for minimum necessary PHI handling.
+1. A user can complete all Must-priority flows without signing up or logging in.
+2. The app does not request bank, UPI, card, payment-provider, or external financial account connections.
+3. Expense and budget data are stored locally in the browser profile and are not sent to server-side storage by product functionality.
 
-### PRD-NFR-004 — Auditability
+### PRD-NFR-002 — Responsive Usability
 
-- **Category:** Observability
+- **Category:** Accessibility
 - **Priority:** Must
 
 **Requirement**
 
-The system shall maintain audit records for scheduling actions, reminder consent changes, opt-outs, and staff access to appointment data.
+The system shall keep core expense, budget, filter, and export actions usable on common desktop and mobile browser viewport sizes.
 
 **Acceptance Criteria**
 
-1. Booking, rescheduling, and schedule-view access events are recorded with actor, timestamp, and action.
-2. Reminder consent and opt-out changes are recorded with actor, timestamp, channel, and action.
-3. Authorized staff can retrieve audit records when needed for compliance review.
+1. Add expense, view expenses, filter expenses, set budget, and export actions are reachable on common phone and laptop viewport sizes.
+2. Important actions are not hidden behind inaccessible controls on narrow screens.
+3. The exact browser and viewport support matrix is documented before final compatibility sign-off.
+
+### PRD-NFR-003 — Accessible Core Controls
+
+- **Category:** Accessibility
+- **Priority:** Must
+
+**Requirement**
+
+The system shall provide clear labels and keyboard-operable controls for core user flows.
+
+**Acceptance Criteria**
+
+1. Form fields for amount, date, category, description, and budget have visible labels.
+2. Save, cancel, edit, delete, filter, clear filter, and export controls can be reached and operated with a keyboard.
+3. Validation feedback is associated with the relevant field and visible near that field.
+
+### PRD-NFR-004 — Interaction Feedback
+
+- **Category:** Observability
+- **Priority:** Should
+
+**Requirement**
+
+The system shall provide visible feedback after save, update, delete, and export actions.
+
+**Acceptance Criteria**
+
+1. After a successful add, edit, delete, or export action, the user sees visible confirmation or an observable UI update.
+2. Failed validation prevents save and shows actionable field-level feedback.
 
 ## 10. User Journeys
 
-### JOURNEY-001 — Patient Books an Eligible Appointment Online
+### JOURNEY-001 — Add and Review an Expense
 
-1. Patient opens the online scheduling experience outside office hours.
-2. Patient selects an appointment type marked as online-bookable.
-3. Patient selects an available slot.
-4. Existing patient confirms required booking information, or new patient submits required intake and insurance information.
-5. Appointment is confirmed and appears in the staff day schedule view.
+1. The user opens SpendWise in a browser.
+2. The user selects the add expense action.
+3. The user enters amount, date, category, and optional description.
+4. The user saves the expense.
+5. The expense appears in the list and the monthly summary updates.
 
-**Related Requirements:** PRD-FR-001, PRD-FR-002, PRD-FR-003, PRD-FR-008, PRD-NFR-001, PRD-NFR-002
+**Related Requirements:** PRD-FR-001, PRD-FR-002, PRD-FR-006, PRD-FR-009, PRD-NFR-001, PRD-NFR-003
 
-### JOURNEY-002 — Patient Reschedules an Eligible Appointment
+### JOURNEY-002 — Correct an Expense Mistake
 
-1. Patient accesses their eligible appointment.
-2. System verifies the appointment is before the clinic-configured rescheduling cutoff.
-3. Patient selects a new available slot.
-4. System updates the appointment time.
-5. Staff day schedule view reflects the rescheduled appointment.
+1. The user finds an existing expense in the expense history.
+2. The user selects edit.
+3. The user changes one or more fields and saves.
+4. The expense list and summary values reflect the updated record.
 
-**Related Requirements:** PRD-FR-004, PRD-FR-005, PRD-FR-008, PRD-NFR-001, PRD-NFR-002
+**Related Requirements:** PRD-FR-003, PRD-FR-006, PRD-NFR-004
 
-### JOURNEY-003 — Patient Receives and Manages Reminders
+### JOURNEY-003 — Review Monthly Spending by Category
 
-1. Patient provides SMS and/or email reminder consent.
-2. System sends reminders through consented channels.
-3. Patient may opt out of a reminder channel.
-4. Staff can see delivery, failure, opt-out, or not-sent status.
+1. The user selects a calendar month.
+2. The user optionally selects a category filter.
+3. The app displays matching expenses.
+4. The monthly summary displays totals and category-wise spending for the selected month.
 
-**Related Requirements:** PRD-FR-006, PRD-FR-007, PRD-NFR-001, PRD-NFR-003, PRD-NFR-004
+**Related Requirements:** PRD-FR-005, PRD-FR-006
 
-### JOURNEY-004 — Staff Reviews the Day’s Schedule
+### JOURNEY-004 — Track Spending Against Budget
 
-1. Front-desk staff opens the day schedule view.
-2. Staff reviews all appointments for the selected day.
-3. Staff sees patient, provider, time, status, appointment type, and contact/reminder status.
-4. Staff identifies any failed reminders or schedule changes requiring follow-up.
+1. The user selects a month.
+2. The user sets or updates a budget amount.
+3. The app displays budget used and remaining or exceeded amount.
+4. The app displays below, approaching, or above budget status based on current monthly spend.
 
-**Related Requirements:** PRD-FR-008, PRD-FR-009, PRD-NFR-001, PRD-NFR-004
+**Related Requirements:** PRD-FR-007, PRD-FR-006
+
+### JOURNEY-005 — Export Filtered Records
+
+1. The user applies month and category filters as needed.
+2. The user selects export CSV.
+3. The app exports matching records with date, description, category, and amount.
+4. The app provides feedback after export or explains when there is nothing to export.
+
+**Related Requirements:** PRD-FR-008, PRD-FR-005, PRD-NFR-004
 
 ## 11. Feature Breakdown
 
-### FEAT-001 — Appointment Type Eligibility Configuration
+### FEAT-001 — Expense Form
 
-- **Summary:** Enables authorized staff to choose which appointment types patients can book online.
+- **Summary:** Create and edit expenses with validation for amount, date, category, and description.
 - **Priority:** Must
-- **Related Requirements:** PRD-FR-001
-- **Expected Spec File:** `specs/FEAT-001-appointment-type-eligibility-configuration.spec.md`
+- **Related Requirements:** PRD-FR-001, PRD-FR-003, PRD-NFR-003, PRD-NFR-004
+- **Expected Spec File:** `specs/FEAT-001-expense-form.spec.md`
 
-### FEAT-002 — Online Patient Booking
+### FEAT-002 — Expense History and Filters
 
-- **Summary:** Enables existing and new patients to book available slots for online-bookable appointment types, including new-patient intake and insurance collection.
+- **Summary:** Display expenses newest first, support delete confirmation, filter by month and category, and show empty states.
 - **Priority:** Must
-- **Related Requirements:** PRD-FR-002, PRD-FR-003, PRD-NFR-001, PRD-NFR-002
-- **Expected Spec File:** `specs/FEAT-002-online-patient-booking.spec.md`
+- **Related Requirements:** PRD-FR-002, PRD-FR-004, PRD-FR-005, PRD-NFR-003
+- **Expected Spec File:** `specs/FEAT-002-expense-history-and-filters.spec.md`
 
-### FEAT-003 — Patient Rescheduling
+### FEAT-003 — Monthly Summary
 
-- **Summary:** Enables patients to reschedule eligible appointments before a clinic-configured cutoff time.
+- **Summary:** Show monthly expense totals, record count, category totals, and budget usage when available.
 - **Priority:** Must
-- **Related Requirements:** PRD-FR-004, PRD-FR-005, PRD-NFR-001, PRD-NFR-002
-- **Expected Spec File:** `specs/FEAT-003-patient-rescheduling.spec.md`
+- **Related Requirements:** PRD-FR-006, PRD-FR-007
+- **Expected Spec File:** `specs/FEAT-003-monthly-summary.spec.md`
 
-### FEAT-004 — Appointment Reminders
+### FEAT-004 — Monthly Budget
 
-- **Summary:** Sends SMS and email reminders with consent, opt-out, delivery tracking, and minimum necessary PHI handling.
+- **Summary:** Set or update one monthly budget and display below, approaching, or above budget status.
 - **Priority:** Must
-- **Related Requirements:** PRD-FR-006, PRD-FR-007, PRD-NFR-001, PRD-NFR-003, PRD-NFR-004
-- **Expected Spec File:** `specs/FEAT-004-appointment-reminders.spec.md`
+- **Related Requirements:** PRD-FR-007, PRD-NFR-004
+- **Expected Spec File:** `specs/FEAT-004-monthly-budget.spec.md`
 
-### FEAT-005 — Staff Day Schedule View
+### FEAT-005 — CSV Export
 
-- **Summary:** Gives staff one place to view the day’s appointments and contact/reminder status.
+- **Summary:** Export currently filtered expense records as CSV using ISO date format.
 - **Priority:** Must
-- **Related Requirements:** PRD-FR-008, PRD-NFR-001, PRD-NFR-004
-- **Expected Spec File:** `specs/FEAT-005-staff-day-schedule-view.spec.md`
+- **Related Requirements:** PRD-FR-008, PRD-FR-005, PRD-NFR-004
+- **Expected Spec File:** `specs/FEAT-005-csv-export.spec.md`
 
-### FEAT-006 — Scheduling/EHR Workflow Connection
+### FEAT-006 — Local Persistence
 
-- **Summary:** Connects online scheduling to the clinic’s existing scheduling/EHR workflow through integration when available or import/export as an interim workflow.
-- **Priority:** Should
-- **Related Requirements:** PRD-FR-009, PRD-NFR-001, PRD-NFR-004
-- **Expected Spec File:** `specs/FEAT-006-scheduling-ehr-workflow-connection.spec.md`
+- **Summary:** Persist expenses and monthly budgets in local browser storage for the same browser profile.
+- **Priority:** Must
+- **Related Requirements:** PRD-FR-009, PRD-NFR-001
+- **Expected Spec File:** `specs/FEAT-006-local-persistence.spec.md`
 
 ## 12. Constraints
 
-- CON-001 — The product must support HIPAA-aligned handling of protected health information.
-- CON-002 — The clinic is a small business, so implementation should account for budget sensitivity.
-- CON-003 — Existing scheduling/EHR capabilities may constrain integration scope and may require an interim import/export workflow.
-- CON-004 — Target release date is not set; see OQ-002.
-- CON-005 — First release is limited to selected appointment types marked as eligible for online booking.
-- CON-006 — Reminder vendors that handle PHI must support required HIPAA-aligned agreements and controls.
+- CON-001 — The first release must remain small and simple for a small-business delivery context.
+- CON-002 — The first release must be a browser-based React application.
+- CON-003 — Expense and budget data must remain local to the browser profile in the first release.
+- CON-004 — The first release must not include account creation, login, cloud sync, or external financial integrations.
+- CON-005 — Currency display must be INR (₹).
+- CON-006 — Amounts must be positive and support up to two decimal places.
+- CON-007 — The first release must use the fixed categories Food, Transport, Shopping, Bills, Health, Entertainment, and Other.
+- CON-008 — CSV export dates must use `YYYY-MM-DD` format.
+- CON-009 — Release can occur when Must-priority requirements pass acceptance testing.
 
 ## 13. Risks
 
 | ID | Risk | Impact | Likelihood | Mitigation |
 |---|---|---|---|---|
-| RISK-001 | Existing scheduling/EHR integration is unavailable or costly | High | Medium | Support import/export as an interim workflow and document the selected launch approach |
-| RISK-002 | HIPAA-aligned vendor agreements delay reminder launch | High | Medium | Identify PHI-handling vendors early and require BAAs before production use |
-| RISK-003 | Online-bookable appointment types are configured too broadly | High | Medium | Restrict launch to staff-marked eligible appointment types and exclude clinical triage |
-| RISK-004 | Success cannot be evaluated because baselines are not quantified | Medium | High | Establish baseline measurement for KPIs before or immediately after pilot launch |
-| RISK-005 | Reminder failures are missed by staff | Medium | Medium | Show delivery/failure status in the staff schedule view |
+| RISK-001 | Users may lose data if they clear browser site data. | High | Medium | Communicate that locally stored records may be removed when browser site data is cleared. |
+| RISK-002 | Local-only storage prevents access across devices. | Medium | High | Keep cloud sync explicitly out of scope and set user expectations in product copy. |
+| RISK-003 | Exact browser support expectations may be unclear. | Medium | Medium | Resolve the exact browser support matrix before final compatibility sign-off. |
+| RISK-004 | Fixed categories may not match every user's spending habits. | Medium | Medium | Keep custom categories as a later-release candidate outside first-release scope. |
 
 ## 14. Open Questions
 
 | ID | Question | Owner | Status | Decision/Due Date |
 |---|---|---|---|---|
-| OQ-001 | What are the quantified baselines and launch targets for online booking adoption, missed scheduling calls, reminder delivery rate, and staff schedule usage? | Product Owner | Open | Not set |
-| OQ-002 | What is the target release date or pilot launch window? | Product Owner | Open | Not set |
-| OQ-003 | What exact rescheduling cutoff time should the clinic configure for launch? | Clinic Administrator | Open | Not set |
-| OQ-004 | Which existing scheduling/EHR system is used, and does it support the required integration approach? | Technical Owner | Open | Not set |
-| OQ-005 | Which fields are required for new-patient intake and insurance collection? | Clinic Administrator | Open | Not set |
+| OQ-001 | What exact desktop and mobile browser versions are supported for final compatibility sign-off? | Product Owner | Open | TBD |
+| OQ-002 | Should CSV import be supported in a later release? | Product Owner | Open | TBD |
+| OQ-003 | Should custom categories be supported in a later release? | Product Owner | Open | TBD |
 
 ## 15. Release and Rollout Considerations
 
-- **Target Release:** Not set; see OQ-002
-- **Rollout Approach:** Pilot with selected appointment types before broader rollout.
-- **Migration Considerations:** Existing scheduling/EHR integration should be used if available; otherwise launch requires an import/export workflow. Final approach depends on OQ-004.
-- **Training/Support Considerations:** Staff training should cover appointment type eligibility configuration, the day schedule view, reminder delivery/failure status, opt-out handling, and any integration or import/export workflow.
+- **Target Release:** As soon as Must-priority requirements pass acceptance testing.
+- **Rollout Approach:** Full release for the single-user local app once accepted.
+- **Migration Considerations:** No migration is required for the first release because there is no existing product data source; locally stored data remains browser-profile-specific.
+- **Training/Support Considerations:** Provide simple in-app guidance for empty states, validation errors, CSV export, and the limitation that clearing browser site data may remove locally stored records.
 
 ## 16. Definition of Product Success
 
 The product is successful when:
 
-- Patients can book selected appointment types online without calling during office hours.
-- Patients can reschedule eligible appointments before the clinic-configured cutoff time.
-- SMS and email reminders are sent only with consent and show delivery/failure status to staff.
-- Front-desk staff can use one day schedule view to see appointments and reminder/contact status.
-- KPI targets in OQ-001 are defined and met or trending positively during rollout.
+- A user can add, view, edit, delete, filter, budget, export, and retain expenses locally according to Must-priority acceptance criteria.
+- Monthly and category totals match the visible records for the selected month and filters.
+- CSV export contains the filtered records with `YYYY-MM-DD` dates.
+- The app preserves the first-release privacy model: no account, no financial integration, and local browser storage only.
 - All Must-priority requirements are accepted.
 - Required quality, security, and compliance outcomes are evidenced.
 
