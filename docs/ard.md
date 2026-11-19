@@ -1,6 +1,6 @@
 # Architecture Requirements Document (ARD)
 
-> Replace all `<PLACEHOLDER>` values. Every material architecture decision or constraint should have a stable ID that feature specifications can reference.
+> Every material architecture decision or constraint has a stable ID that feature specifications can reference.
 
 ## Document Metadata
 
@@ -9,359 +9,398 @@
 - **Version:** 0.1
 - **Status:** Draft
 - **Architecture Owner:** TBD; see ARC-OQ-001
-- **Contributors:** Product Owner TBD, Engineering Lead TBD, Security Reviewer TBD, Clinic Administrator TBD
-- **Last Updated:** 2026-11-18
+- **Contributors:** TBD; see ARC-OQ-002
+- **Last Updated:** 2026-11-19
 - **Reference PRD:** `PRD.md`
 
 ---
 
 ## 1. Architecture Summary
 
-Online Patient Scheduling and Reminders will be a custom lightweight web application built as a Next.js full-stack TypeScript application with PostgreSQL persistence, deployed on a TBD cloud provider using HIPAA-eligible managed services under a business associate agreement before production use. The architecture prioritizes HIPAA-aligned PHI handling, small-business operational simplicity, mobile-first patient access, and safe integration with the clinic’s existing scheduling/EHR workflow.
+Online Patient Scheduling and Reminders will use a hybrid architecture: a custom React patient/staff portal backed by a Node.js/TypeScript API, integrated with the existing practice management/EHR scheduling system, HIPAA-eligible SMS and email vendors, and managed cloud services covered by Business Associate Agreements where PHI is processed.
 
-Patients will book and reschedule eligible appointments through passwordless magic link or one-time-code access. Staff will use role-based accounts with MFA to configure appointment eligibility, configure rescheduling rules, and view the day’s schedule. The existing scheduling/EHR system is the appointment system of record when integration is available; the application database acts as an operational cache and workflow store. FHIR/REST integration is preferred, with CSV import/export as the fallback when the EHR cannot support API integration.
+The EHR/practice management scheduling system remains the source of truth for availability, confirmed bookings, rescheduling, appointment status, and staff daily schedule data. The application stores only operational metadata needed to support the product: OTP verification records, audit logs, reminder state, reminder delivery/action status, pending new-patient requests, integration error records, configuration, and staff account/access data. Confirmed schedule data is not migrated into the application database.
+
+Key architecture drivers are HIPAA-conscious PHI handling, source-of-truth integrity, safe handling of integration unavailability, small-business operational simplicity, patient accessibility, and measurable outside-hours booking capture.
 
 ## 2. Architecture Drivers
 
-- PRD-FR-001 — Authorized staff must configure which appointment types are online-bookable.
-- PRD-FR-002 — Patients must be able to book available slots for eligible appointment types online.
-- PRD-FR-003 — New-patient intake and insurance information must be collected before confirming an appointment.
-- PRD-FR-004 — Patients must be able to reschedule eligible appointments before the clinic-configured cutoff.
-- PRD-FR-005 — Authorized staff must configure the patient self-service rescheduling cutoff.
-- PRD-FR-006 — SMS and email reminders must be sent only when channel consent is recorded.
-- PRD-FR-007 — Reminder opt-outs and delivery/failure status must be available.
-- PRD-FR-008 — Staff must see all appointments for a selected day with patient, provider, time, status, appointment type, and contact/reminder status.
-- PRD-FR-009 — Existing scheduling/EHR integration is preferred, with import/export supported when integration is unavailable.
-- PRD-NFR-001 — PHI requires HIPAA-aligned controls including BAAs, encryption, RBAC, audit logs, and minimum necessary handling.
-- PRD-NFR-002 — Patient booking and rescheduling must be mobile-first, responsive, and WCAG 2.1 AA conformant.
-- PRD-NFR-003 — Reminder content must avoid PHI beyond the minimum necessary.
-- PRD-NFR-004 — Scheduling actions, consent changes, opt-outs, and staff access to appointment data must be auditable.
-- CON-001 — The product must support HIPAA-aligned handling of protected health information.
-- CON-002 — The clinic is a small business, so implementation must account for budget sensitivity.
-- CON-003 — Existing scheduling/EHR capabilities may constrain integration scope and may require interim import/export.
-- CON-004 — Target release date is not set.
-- CON-005 — First release is limited to selected appointment types marked as eligible for online booking.
-- CON-006 — Reminder vendors that handle PHI must support required HIPAA-aligned agreements and controls.
+- PRD-FR-001 — Existing patients must verify identity with a one-time code before booking or rescheduling.
+- PRD-FR-002 — Online booking must be limited to clinic-selected standard, low-risk appointment types.
+- PRD-FR-003 — The system must handle no matching appointment slots without creating appointments.
+- PRD-FR-004 — Existing-patient rescheduling must be blocked inside the clinic-defined cutoff window.
+- PRD-FR-005 — New patients can create pending requests only and cannot directly book confirmed slots.
+- PRD-FR-006 — The system must send SMS and email appointment reminders through suitable vendors.
+- PRD-FR-007 — Reminder recipients must be able to confirm, cancel, or request reschedule.
+- PRD-FR-008 — Staff need one daily view of appointments, appointment status, and reminder confirmations.
+- PRD-FR-009 — The system must fail safely when the scheduling integration is unavailable.
+- PRD-NFR-001 — PHI handling must support HIPAA compliance review and minimum-necessary reminder content.
+- PRD-NFR-002 — Patient-facing flows must meet WCAG 2.1 AA.
+- PRD-NFR-003 — The existing practice management/EHR system must remain the scheduling source of truth.
+- CON-001 — The clinic is a small business, so the architecture must avoid unnecessary operational complexity.
+- CON-002 — The product operates in healthcare and must support HIPAA-compliant handling of PHI.
+- CON-003 — The existing practice management/EHR scheduling system is the source of truth.
+- CON-004 — Direct online booking is limited to selected standard, low-risk appointment types.
+- CON-005 — Existing-patient rescheduling is limited to outside a clinic-defined cutoff window.
+- CON-006 — New patients can create pending requests only and cannot directly book confirmed slots.
 
 ## 3. Architecture Principles
 
-1. Minimize PHI collection, storage, transmission, and exposure across all components.
-2. Prefer managed HIPAA-eligible services and BAA-covered vendors to reduce operational burden for a small business.
+1. Treat the EHR/practice management scheduling system as authoritative for confirmed schedule state.
+2. Minimize PHI collection, retention, display, and transmission across all application flows.
 3. Reuse established repository and platform patterns where appropriate.
 4. Keep presentation, orchestration, domain, integration, and persistence concerns separated.
-5. Treat the existing scheduling/EHR system as the appointment system of record when integration is available.
-6. Design all patient-facing flows mobile-first and accessible to WCAG 2.1 AA.
+5. Prefer managed HIPAA-eligible services with BAAs to reduce operational burden for a small business.
+6. Fail closed for booking/rescheduling when source-system confirmation is unavailable.
+7. Make integration boundaries explicit through adapters so the EHR vendor can be confirmed later without redesigning the application core.
 
 ## 4. System Context
 
 ### 4.1 Actors
 
-- Patient — Books eligible appointments, submits new-patient intake and insurance information, reschedules eligible appointments, provides reminder consent, and opts out of reminders.
-- Front-Desk Staff — Reviews the day’s schedule, monitors reminder/contact status, and follows up on failed reminders or schedule changes.
-- Clinic Administrator — Configures online-bookable appointment types, rescheduling cutoff rules, staff access, and rollout settings.
-- Existing Scheduling/EHR System — Acts as the appointment system of record when integration is available and exchanges schedule data with the application.
-- SMS Reminder Vendor — Sends consented SMS reminders and returns delivery/failure events.
-- Email Reminder Vendor — Sends consented email reminders and returns delivery/failure events.
-- Cloud Platform — Hosts application, database, secrets, logs, metrics, and deployment infrastructure using HIPAA-eligible services under a BAA before production.
+- Existing Patient — Uses OTP verification to book eligible appointments, reschedule eligible appointments, and act on reminders.
+- New Patient — Submits a pending appointment request for staff review without booking a confirmed slot.
+- Clinic Staff — Uses MFA-protected staff access to review the daily schedule, statuses, reminder confirmations, pending requests, and exceptions.
+- Clinic Operations — Defines eligible appointment types, rescheduling cutoff rules, reminder timing, and operational exception handling.
+- HIPAA/Security Reviewer — Reviews PHI handling, vendors, templates, access controls, audit logging, and production readiness.
+- Practice Management/EHR Scheduling System — Owns availability, confirmed appointments, reschedules, appointment status, and daily schedule data.
+- SMS Vendor — Sends OTPs or reminders by SMS and returns delivery/action status where supported.
+- Email Vendor — Sends OTPs or reminders by email and returns delivery/action status where supported.
+- Managed Cloud Platform — Hosts PHI-bearing application, database, secrets, logs, metrics, and deployment infrastructure under HIPAA-eligible services and BAAs.
 
 ### 4.2 External Systems
 
 | ID | System | Purpose | Interface | Owner |
 |---|---|---|---|---|
-| EXT-001 | Existing scheduling/EHR system | Appointment system of record when integration is available; source/target for appointments, providers, availability, and schedule updates | REST/FHIR preferred; File fallback | Clinic/vendor TBD; see ARC-OQ-005 |
-| EXT-002 | SMS reminder vendor | Send appointment reminders and receive delivery/failure status for consented SMS channels | REST/Event webhook | Vendor TBD; see ARC-OQ-007 |
-| EXT-003 | Email reminder vendor | Send appointment reminders and receive delivery/failure status for consented email channels | REST/Event webhook | Vendor TBD; see ARC-OQ-007 |
-| EXT-004 | Cloud provider | Host HIPAA-aligned production workload, managed database, secrets, observability, and deployment infrastructure | Managed platform APIs | Provider TBD; see ARC-OQ-002 |
+| EXT-001 | Existing practice management/EHR scheduling system | Source of truth for availability, confirmed bookings, reschedules, appointment status, and daily schedule data | Adapter; final API/file/interface TBD | EHR Vendor / Clinic |
+| EXT-002 | SMS delivery vendor | SMS OTP and appointment reminder delivery with status callbacks | REST/Webhook | Vendor TBD; Clinic accountable |
+| EXT-003 | Email delivery vendor | Email OTP and appointment reminder delivery with status callbacks | REST/Webhook | Vendor TBD; Clinic accountable |
+| EXT-004 | Managed cloud platform | Hosting, database, secrets, observability, deployment, and encrypted storage | Managed services | Cloud Vendor TBD; Clinic accountable |
+| EXT-005 | Staff MFA mechanism | MFA for application-managed staff accounts | Auth service/API | Vendor or platform TBD |
 
 ## 5. Technology Stack
 
 | Layer | Technology | Version/Constraint | Rationale |
 |---|---|---|---|
-| Frontend | Next.js with TypeScript | Stable supported version selected during implementation; WCAG 2.1 AA patient flows required | Supports mobile-first patient UI and staff UI in a single lightweight web application |
-| Backend | Next.js server-side/API routes with TypeScript | Stable supported Node.js LTS runtime selected during implementation | Keeps architecture simple for a small business while preserving typed API/domain logic |
-| Data | PostgreSQL | Managed encrypted PostgreSQL service required in production | Relational model fits appointments, consent, audit logs, configuration, and integration state |
-| Hosting | TBD cloud provider | Must use HIPAA-eligible managed services under BAA before production | Cloud provider is unsettled; compliance and operational controls drive final selection |
-| Authentication | Staff MFA accounts; patient passwordless magic link or one-time code | Staff RBAC required; patient access must avoid unnecessary account burden | Balances security, usability, and small-clinic operational simplicity |
-| Integration | FHIR/REST preferred; CSV import/export fallback | Final EHR capabilities TBD | Supports PRD-FR-009 without blocking launch if API integration is unavailable |
-| Messaging | SMS and email vendors | Must support HIPAA-aligned agreements and minimum necessary content controls when handling PHI | Required for PRD-FR-006 and PRD-FR-007 |
-| Infrastructure | Infrastructure as Code | Tool TBD; required before production | Enables repeatable environments, change review, and rollback discipline |
+| Frontend | React | Exact version TBD; use supported production release | Supports accessible patient and staff web flows with componentized UI. |
+| Backend | Node.js with TypeScript | Exact Node.js LTS version TBD | Matches selected stack and enables typed API, orchestration, and integration adapters. |
+| Data | Encrypted managed relational database | HIPAA-eligible managed service with BAA; exact product TBD | Stores operational metadata, pending requests, audit logs, reminder state, and configuration without becoming schedule source of truth. |
+| Hosting | HIPAA-eligible managed cloud services | Signed BAA required for PHI-bearing services | Reduces operational complexity while supporting HIPAA control needs. |
+| Identity | Application-managed staff accounts with MFA and RBAC | MFA required for staff; patient OTP for patient flows | Meets staff access-control needs without assuming clinic SSO availability. |
+| Messaging | HIPAA-eligible SMS and email vendors | BAAs, delivery webhooks, and minimum-necessary template controls required | Supports reminders and OTP delivery with compliance review. |
+| Integration | EHR scheduling adapter layer | Final adapter implementation TBD after EHR capabilities are confirmed | Isolates vendor-specific scheduling integration from core workflows. |
+| Infrastructure | Infrastructure as Code | Tool TBD | Enables repeatable environments, reviewable changes, and rollback-capable deployment. |
+| Observability | Structured logs, metrics, traces, alerts | PHI redaction required | Supports HIPAA-conscious operations and integration troubleshooting. |
 
 ## 6. Logical Architecture
 
 ### 6.1 Components
 
-#### COMP-001 — Patient Web Experience
+#### COMP-001 — Patient Web Portal
 
-- **Responsibility:** Provide mobile-first booking, new-patient intake, insurance capture, rescheduling, consent, and opt-out flows.
-- **Inputs:** Appointment type selections, patient identifiers, intake fields, insurance fields, selected slots, reminder consent, opt-out requests, passwordless access tokens.
-- **Outputs:** Booking requests, rescheduling requests, consent records, opt-out records, patient-facing confirmations, validation errors.
-- **Dependencies:** COMP-002, COMP-003, COMP-004, COMP-006, COMP-008.
-- **Repository Area:** `app/patient` or TBD by implementation repository structure.
+- **Responsibility:** Presents patient-facing booking, rescheduling, reminder-action, OTP verification, no-slot, and new-patient request flows meeting WCAG 2.1 AA.
+- **Inputs:** Patient-entered identity data, OTP code, appointment type criteria, slot selection, reschedule request, reminder action, new-patient request details.
+- **Outputs:** API requests to booking, rescheduling, OTP, reminder-action, and request endpoints; accessible confirmations and safe error states.
+- **Dependencies:** COMP-002, COMP-003, COMP-004, COMP-008.
+- **Repository Area:** `frontend/` or TBD by Engineering Lead; see ARC-OQ-003.
 
-#### COMP-002 — Staff and Admin Web Experience
+#### COMP-002 — Staff Web Portal
 
-- **Responsibility:** Provide staff day schedule view, appointment type eligibility configuration, rescheduling cutoff configuration, reminder status visibility, and administrative controls.
-- **Inputs:** Staff credentials, MFA challenge responses, schedule date filters, configuration changes, audit search filters.
-- **Outputs:** Day schedule view, configuration updates, reminder/contact status display, audit retrieval results.
-- **Dependencies:** COMP-003, COMP-004, COMP-005, COMP-006, COMP-008.
-- **Repository Area:** `app/staff` or TBD by implementation repository structure.
+- **Responsibility:** Provides staff daily schedule view, appointment statuses, reminder confirmations, pending request visibility, and integration exception visibility.
+- **Inputs:** Staff credentials/MFA, schedule date filters, pending request review context.
+- **Outputs:** Daily schedule display, reminder status display, pending request lists, exception indicators.
+- **Dependencies:** COMP-003, COMP-005, COMP-006, COMP-008, COMP-009.
+- **Repository Area:** `frontend/` or TBD by Engineering Lead; see ARC-OQ-003.
 
-#### COMP-003 — Scheduling Domain Service
+#### COMP-003 — Backend API and Workflow Orchestrator
 
-- **Responsibility:** Enforce appointment eligibility, availability checks, booking rules, rescheduling cutoff rules, and schedule state transitions.
-- **Inputs:** Booking commands, rescheduling commands, appointment type configuration, availability data, patient context.
-- **Outputs:** Confirmed booking records, rescheduled appointment records, rejected booking/rescheduling attempts, domain events for reminders and audit logging.
-- **Dependencies:** COMP-004, COMP-005, COMP-006, COMP-008.
-- **Repository Area:** `src/domain/scheduling` or TBD by implementation repository structure.
+- **Responsibility:** Owns server-side workflow orchestration for OTP verification, eligibility filtering, booking, rescheduling cutoff enforcement, reminder actions, pending requests, staff schedule aggregation, validation, and safe failure handling.
+- **Inputs:** REST API calls from patient and staff portals, vendor callbacks, scheduled reminder triggers.
+- **Outputs:** Responses to portals, EHR adapter calls, SMS/email vendor calls, database writes, audit events, observability telemetry.
+- **Dependencies:** COMP-004, COMP-005, COMP-006, COMP-007, COMP-008, COMP-009.
+- **Repository Area:** `backend/` or TBD by Engineering Lead; see ARC-OQ-003.
 
-#### COMP-004 — Persistence Layer
+#### COMP-004 — Patient Verification Service
 
-- **Responsibility:** Store operational cache data, configuration, patient-provided workflow data, consent state, reminder status, integration state, and audit records.
-- **Inputs:** Domain entities, configuration updates, consent changes, reminder delivery events, integration sync metadata, audit events.
-- **Outputs:** Retrieved appointment cache, configuration records, consent state, reminder status, audit records, integration state.
-- **Dependencies:** Managed PostgreSQL service.
-- **Repository Area:** `src/persistence` or TBD by implementation repository structure.
+- **Responsibility:** Matches existing patients using approved matching rules, issues OTPs through phone or email, validates OTPs, enforces expiry/rate limits, and records audit events.
+- **Inputs:** Patient identity match fields, selected delivery channel, OTP submissions.
+- **Outputs:** OTP delivery requests, verification status, audit records, safe failure responses.
+- **Dependencies:** COMP-003, COMP-006, COMP-007, EXT-002, EXT-003.
+- **Repository Area:** `backend/auth/` or TBD by Engineering Lead; see ARC-OQ-003.
 
-#### COMP-005 — EHR Integration Adapter
+#### COMP-005 — Scheduling Integration Adapter
 
-- **Responsibility:** Synchronize appointments, provider availability, appointment types, and schedule updates with the existing scheduling/EHR workflow when available; support CSV import/export fallback.
-- **Inputs:** FHIR/REST API responses, CSV imports, booking updates, rescheduling updates, export requests.
-- **Outputs:** EHR API calls, CSV exports, normalized schedule data, sync success/failure events.
-- **Dependencies:** EXT-001, COMP-003, COMP-004, COMP-008.
-- **Repository Area:** `src/integrations/ehr` or TBD by implementation repository structure.
+- **Responsibility:** Encapsulates all EHR/practice management scheduling operations for availability lookup, appointment creation, rescheduling, cancellation/status updates where supported, and daily schedule retrieval.
+- **Inputs:** Availability criteria, appointment creation requests, reschedule requests, schedule date queries, reminder-action updates where supported.
+- **Outputs:** Source-system confirmed booking/reschedule results, current schedule data, appointment status data, integration errors.
+- **Dependencies:** EXT-001, COMP-003, COMP-009.
+- **Repository Area:** `backend/integrations/ehr/` or TBD by Engineering Lead; see ARC-OQ-003.
 
 #### COMP-006 — Reminder Service
 
-- **Responsibility:** Schedule SMS and email reminders, enforce consent and opt-out rules, submit reminder messages, and process delivery/failure callbacks.
-- **Inputs:** Appointment events, consent records, opt-out records, reminder schedules, vendor callbacks.
-- **Outputs:** SMS/email send requests, reminder status records, failed reminder alerts, audit events.
-- **Dependencies:** EXT-002, EXT-003, COMP-004, COMP-008.
-- **Repository Area:** `src/domain/reminders` or TBD by implementation repository structure.
+- **Responsibility:** Schedules and sends SMS/email reminders, handles delivery callbacks, processes confirm/cancel/reschedule-request actions, and exposes reminder status to staff workflows.
+- **Inputs:** Appointment data from EHR adapter, reminder timing configuration, patient contact data, vendor callbacks, reminder action submissions.
+- **Outputs:** SMS/email sends, reminder state records, action records, audit events, staff-visible status.
+- **Dependencies:** COMP-003, COMP-005, COMP-007, EXT-002, EXT-003.
+- **Repository Area:** `backend/reminders/` or TBD by Engineering Lead; see ARC-OQ-003.
 
-#### COMP-007 — Authentication and Authorization Service
+#### COMP-007 — Operational Data Store
 
-- **Responsibility:** Authenticate staff with MFA, authorize staff actions using roles, issue and validate patient passwordless links or one-time codes, and enforce least privilege.
-- **Inputs:** Staff login requests, MFA verification, patient link/code requests, session tokens, role assignments.
-- **Outputs:** Authenticated sessions, authorization decisions, access-denied responses, security audit events.
-- **Dependencies:** COMP-004, cloud identity/secrets services.
-- **Repository Area:** `src/auth` or TBD by implementation repository structure.
+- **Responsibility:** Persists operational metadata, OTP records, audit logs, reminder state, pending new-patient requests, integration errors, configuration, and staff account/access data.
+- **Inputs:** Writes from backend workflows, callbacks, staff actions, system jobs.
+- **Outputs:** Operational records for workflow continuity, staff display, audit review, metrics, and troubleshooting.
+- **Dependencies:** Managed database in EXT-004.
+- **Repository Area:** Database migrations in `backend/db/` or TBD by Engineering Lead; see ARC-OQ-003.
 
-#### COMP-008 — Audit and Observability Service
+#### COMP-008 — Staff Identity and Access Control
 
-- **Responsibility:** Record audit events, structured logs, operational metrics, error events, and alerts while preventing PHI leakage into telemetry.
-- **Inputs:** Scheduling actions, staff access events, consent changes, opt-outs, integration failures, reminder failures, application errors.
-- **Outputs:** Audit records, structured logs, metrics, alerts, production readiness evidence.
-- **Dependencies:** COMP-004, cloud logging/metrics/alerting services.
-- **Repository Area:** `src/observability` or TBD by implementation repository structure.
+- **Responsibility:** Manages staff accounts, MFA, roles, authorization checks, and session controls for staff-only functions.
+- **Inputs:** Staff login credentials, MFA challenges, role assignments.
+- **Outputs:** Staff sessions, authorization decisions, audit events.
+- **Dependencies:** COMP-003, COMP-007, EXT-005.
+- **Repository Area:** `backend/auth/` or TBD by Engineering Lead; see ARC-OQ-003.
+
+#### COMP-009 — Observability and Audit Layer
+
+- **Responsibility:** Produces structured logs, metrics, traces, alerts, security/audit events, and PHI-redacted operational telemetry across application and integration flows.
+- **Inputs:** Events and telemetry from application components and integrations.
+- **Outputs:** Dashboards, alerts, audit records, troubleshooting views, security-review evidence.
+- **Dependencies:** EXT-004, COMP-003, COMP-007.
+- **Repository Area:** `infra/observability/` or TBD by Engineering Lead; see ARC-OQ-003.
 
 ### 6.2 Data Flow
 
-1. Patient requests booking or rescheduling access through COMP-001, and COMP-007 validates a passwordless magic link or one-time code.
-2. COMP-001 sends booking or rescheduling data to COMP-003.
-3. COMP-003 validates appointment type eligibility, availability, new-patient intake requirements, insurance requirements, and rescheduling cutoff rules.
-4. COMP-003 retrieves or updates operational schedule data through COMP-004 and synchronizes appointment changes through COMP-005 when EHR integration is available.
-5. COMP-005 exchanges appointment, provider, availability, and schedule update data with EXT-001 through FHIR/REST when available or CSV import/export as a fallback.
-6. COMP-003 emits booking and rescheduling events to COMP-006 and COMP-008.
-7. COMP-006 checks consent and opt-out state in COMP-004 before sending SMS through EXT-002 or email through EXT-003.
-8. EXT-002 and EXT-003 return delivery/failure callbacks to COMP-006, which records status in COMP-004 and alerts through COMP-008 for failures.
-9. Staff authenticate through COMP-007 and view the day’s schedule in COMP-002, which reads appointment, reminder, and contact status from COMP-003 and COMP-004.
-10. COMP-008 records audit events for staff access, booking, rescheduling, consent, opt-out, integration, and reminder status changes.
+1. Existing Patient opens the Patient Web Portal and submits identity information for booking or rescheduling.
+2. Patient Web Portal sends identity information to the Backend API and Workflow Orchestrator.
+3. Patient Verification Service matches the patient against the approved source-system or adapter-supported lookup path, sends an OTP by SMS or email, and records an audit event.
+4. Existing Patient submits the OTP; Patient Verification Service validates it and returns verified status to the workflow.
+5. Backend API requests eligible appointment types and availability through the Scheduling Integration Adapter.
+6. Scheduling Integration Adapter reads availability from the EHR/practice management scheduling system and returns only source-system-confirmed availability.
+7. Existing Patient selects a slot; Backend API validates eligibility and, for rescheduling, checks the clinic-defined cutoff window.
+8. Scheduling Integration Adapter creates or updates the appointment in the EHR; Backend API does not show completion unless the EHR confirms success.
+9. Operational Data Store records audit events, verification metadata, reminder state, integration outcomes, and non-authoritative operational metadata.
+10. Reminder Service sends HIPAA-reviewed SMS/email reminders and records delivery status and reminder actions.
+11. Staff Web Portal requests the daily schedule; Backend API aggregates EHR schedule data with local reminder status, pending request state, and integration exception indicators.
+12. If the EHR integration is unavailable, Backend API prevents confirmed appointment creation/modification, presents safe patient messaging, records the exception, and exposes it to staff.
 
 ## 7. Architecture Decisions
 
-### ARD-DEC-001 — Build a Custom Lightweight Web Application
+### ARD-DEC-001 — Hybrid Custom Portal Over Vendor Scheduling and Messaging
 
 - **Status:** Accepted
-- **Related Requirements:** PRD-FR-001, PRD-FR-002, PRD-FR-003, PRD-FR-004, PRD-FR-005, PRD-FR-008, PRD-NFR-001, PRD-NFR-002
+- **Related Requirements:** PRD-FR-001, PRD-FR-002, PRD-FR-004, PRD-FR-006, PRD-FR-008, PRD-NFR-001, PRD-NFR-003
 
 **Decision**
 
-The first release will use a custom lightweight web application built on managed HIPAA-eligible cloud services and BAA-covered vendors.
+Use a custom React patient/staff portal and Node.js/TypeScript backend over vendor systems for EHR scheduling, SMS, email, managed cloud, and MFA.
 
 **Rationale**
 
-The PRD requires a combination of patient booking, rescheduling, staff schedule visibility, clinic-configurable rules, reminder consent, and EHR/import-export flexibility. A custom lightweight application supports these specific workflows while keeping scope constrained for a small business.
+The PRD requires clinic-specific booking restrictions, OTP verification, reminder actions, daily schedule aggregation, and safe EHR source-of-truth behavior. A hybrid model allows workflow customization while avoiding the operational burden of replacing EHR scheduling or self-hosting commodity infrastructure.
 
 **Consequences**
 
-- The product can tailor eligibility, rescheduling, reminders, and schedule views to the clinic workflow.
-- The engineering team must own secure software delivery, production operations, and HIPAA-aligned controls.
-- Vendor and cloud selections must be validated for BAA coverage before production.
+- Enables controlled patient and staff experience tailored to PRD flows.
+- Keeps the EHR as the confirmed scheduling authority.
+- Requires strong integration and vendor-management practices.
+- Introduces dependency on third-party EHR, SMS, email, cloud, and MFA vendors.
 
 **Alternatives Considered**
 
-- Scheduling SaaS product — Not selected because fit with EHR fallback, custom staff view, and PHI/audit requirements is unknown.
-- Existing EHR portal extension — Not selected because existing EHR capabilities are unknown and may constrain launch.
-- Hybrid SaaS plus custom integration layer — Not selected for first release because it adds integration and vendor complexity.
+- Configure only a scheduling/reminder SaaS: not selected because staff daily view, OTP flow, EHR-source-of-truth behavior, and custom pending-request behavior may require clinic-specific orchestration.
+- Fully custom scheduling system: not selected because it conflicts with the EHR source-of-truth constraint and increases operational complexity.
+- Defer implementation until EHR capabilities are known: not selected as the architecture can proceed with an adapter boundary while vendor discovery remains open.
 
-### ARD-DEC-002 — Use Next.js TypeScript with PostgreSQL
+### ARD-DEC-002 — EHR Adapter Pattern for Scheduling Integration
 
 - **Status:** Accepted
-- **Related Requirements:** PRD-FR-001, PRD-FR-002, PRD-FR-004, PRD-FR-008, PRD-NFR-002, PRD-NFR-004
+- **Related Requirements:** PRD-FR-002, PRD-FR-004, PRD-FR-008, PRD-FR-009, PRD-NFR-003
 
 **Decision**
 
-The application will use Next.js as a full-stack TypeScript web application with PostgreSQL for persistence.
+All scheduling operations must pass through a Scheduling Integration Adapter. The final implementation can use standards-based API, vendor REST API, file interface, or another vendor-supported method after EHR capabilities are confirmed.
 
 **Rationale**
 
-Next.js and TypeScript support a mobile-first web experience and typed server-side workflow logic in one lightweight stack. PostgreSQL supports transactional scheduling workflows, consent state, configuration, integration state, and audit records.
+The approved PRD leaves the exact EHR system and capabilities open. An adapter boundary protects core workflows from vendor-specific implementation details and allows safe handling of integration unavailability.
 
 **Consequences**
 
-- A single TypeScript stack reduces implementation complexity.
-- Database schema design must protect PHI and enforce retention and audit requirements.
-- The team must select stable supported framework and runtime versions before implementation.
+- Reduces rework when the EHR product is confirmed.
+- Makes integration failure behavior explicit and testable.
+- Requires contract tests or mocks for adapter behavior before the final vendor contract is available.
+- Exact latency, consistency, and supported operations remain open until EHR discovery is complete.
 
 **Alternatives Considered**
 
-- React frontend with separate Node.js backend — Not selected because it increases service boundaries for a small first release.
-- Python/Django server-rendered application — Not selected because the approved stack is TypeScript/Next.js.
-- Stack TBD — Not selected because the architecture interview settled the concrete stack.
+- Directly code against a presumed EHR API: not selected because the EHR product and capabilities are not settled.
+- Flat-file-only integration: not selected because it may not support real-time booking and rescheduling needs.
+- Manual staff reconciliation only: not selected because the PRD requires confirmed bookings and reschedules to reflect in the source scheduling system.
 
-### ARD-DEC-003 — Treat Existing Scheduling/EHR as System of Record When Integrated
+### ARD-DEC-003 — Minimal Local Persistence With EHR as Schedule Source of Truth
 
 - **Status:** Accepted
-- **Related Requirements:** PRD-FR-002, PRD-FR-004, PRD-FR-008, PRD-FR-009, PRD-NFR-004
+- **Related Requirements:** PRD-FR-005, PRD-FR-006, PRD-FR-007, PRD-FR-008, PRD-NFR-001, PRD-NFR-003
 
 **Decision**
 
-When integration is available, the existing scheduling/EHR system will be the appointment system of record, and the application database will store operational cache, workflow, reminder, consent, integration, and audit data. When integration is unavailable, CSV import/export will provide an interim workflow.
+The application will store only operational metadata, audit logs, OTP records, reminder state, pending new-patient requests, integration errors, configuration, and staff account/access records. Confirmed schedule and patient record data remain authoritative in the EHR/practice management system.
 
 **Rationale**
 
-This reduces duplicate schedule management and aligns with PRD-FR-009 while preserving a launch path when EHR integration is unavailable or costly.
+This minimizes PHI footprint, supports HIPAA minimum-necessary principles, and avoids conflicting schedule state while still supporting reminders, staff visibility, and operational troubleshooting.
 
 **Consequences**
 
-- Availability and conflict checks must account for synchronization timing and EHR capabilities.
-- Import/export fallback may create operational reconciliation work for staff.
-- The final integration design depends on the specific EHR system and available APIs.
+- Reduces data migration and reconciliation risk.
+- Limits duplicate PHI storage.
+- Requires live or recently refreshed EHR access for confirmed schedule display.
+- Staff view must identify or avoid stale schedule data if the EHR cannot be refreshed.
 
 **Alternatives Considered**
 
-- Application database as the appointment system of record — Not selected because it risks duplicating the EHR workflow.
-- No local appointment persistence — Not selected because reminders, schedule views, audit logs, and fallback workflows need operational state.
-- Manual staff reconciliation only — Not selected because it undermines online booking efficiency.
+- Replicate all EHR schedule and patient data locally: not selected because it increases PHI footprint and source-of-truth risk.
+- Store no application data: not selected because reminders, pending requests, audit logs, OTPs, and exception handling require durable operational records.
 
-### ARD-DEC-004 — Use Passwordless Patient Access and Staff MFA/RBAC
+### ARD-DEC-004 — HIPAA-Eligible Managed Cloud With BAAs
 
 - **Status:** Accepted
-- **Related Requirements:** PRD-FR-002, PRD-FR-004, PRD-FR-005, PRD-FR-008, PRD-NFR-001, PRD-NFR-004
+- **Related Requirements:** PRD-NFR-001
 
 **Decision**
 
-Staff will authenticate with role-based accounts and MFA. Patients will access booking and rescheduling through passwordless magic links or one-time codes.
+Host PHI-bearing application components on HIPAA-eligible managed cloud services with signed BAAs, encrypted managed database/storage, managed secrets, audited key access, and environment isolation.
 
 **Rationale**
 
-Staff actions involve PHI and administrative controls, requiring stronger identity and authorization. Patient passwordless access reduces friction while providing controlled access to booking and rescheduling flows.
+The clinic is a small business and should avoid unnecessary operational complexity while still meeting healthcare compliance expectations.
 
 **Consequences**
 
-- Patient access tokens and one-time codes must be time-limited, single-use where appropriate, and audited.
-- Staff roles must be defined before production use.
-- Authentication events and authorization failures must feed security audit logs.
+- Reduces infrastructure maintenance burden.
+- Requires vendor due diligence and BAA completion before production.
+- Requires careful service selection so only HIPAA-eligible services process PHI.
 
 **Alternatives Considered**
 
-- Username/password for all users — Not selected because patient account creation adds friction.
-- Clinic SSO for staff and full patient portal accounts — Not selected because SSO and portal capabilities are not settled.
-- Booking reference only with no patient authentication — Not selected because it is insufficient for PHI-sensitive rescheduling workflows.
+- Clinic-owned on-premises hosting: not selected because it increases operational complexity.
+- Existing EHR-hosted portal only: not selected because the selected implementation model requires a custom portal and workflow orchestration.
 
-### ARD-DEC-005 — Prefer FHIR/REST EHR Integration with CSV Fallback
+### ARD-DEC-005 — Application-Managed Staff Accounts With MFA and RBAC
 
 - **Status:** Accepted
-- **Related Requirements:** PRD-FR-009, PRD-NFR-001, PRD-NFR-004
+- **Related Requirements:** PRD-FR-008, PRD-NFR-001
 
 **Decision**
 
-The application will prefer FHIR/REST integration with the existing scheduling/EHR system and provide CSV import/export fallback when API integration is unavailable.
+Staff will use application-managed accounts with MFA and role-based access control for staff schedule and operational views.
 
 **Rationale**
 
-FHIR/REST is the preferred healthcare integration model when supported, while CSV fallback preserves a launch path aligned to PRD-FR-009.
+Clinic SSO and EHR delegated authorization are not confirmed. Application-managed accounts with MFA provide a clear launch path while enforcing staff-specific access controls.
 
 **Consequences**
 
-- The EHR adapter must normalize data across API and file workflows.
-- CSV fallback requires strict access controls, encryption, retention, and audit handling.
-- Contract tests are required for API integration and file schema validation is required for CSV workflows.
+- Enables staff access before clinic identity integrations are confirmed.
+- Requires account lifecycle administration and access review procedures.
+- Can later be superseded by clinic SSO if available.
 
 **Alternatives Considered**
 
-- Vendor-specific API first — Not selected because the EHR vendor is unknown.
-- File-only first release — Not selected because it may create unnecessary manual work when APIs are available.
-- Manual reconciliation only — Not selected because it does not satisfy the preferred integration approach.
+- Clinic identity provider SSO: not selected for launch because availability is not established.
+- EHR-launched staff access: not selected because EHR capability is unknown.
 
-### ARD-DEC-006 — Require Automated CI/CD, IaC, Security Scanning, SBOM, and Rollback
+### ARD-DEC-006 — HIPAA-Eligible Messaging Vendors With Minimum-Necessary Templates
 
 - **Status:** Accepted
-- **Related Requirements:** PRD-NFR-001, PRD-NFR-004
+- **Related Requirements:** PRD-FR-001, PRD-FR-006, PRD-FR-007, PRD-NFR-001
 
 **Decision**
 
-Production readiness requires automated build, test, lint, security scan, SBOM generation, infrastructure as code for environments, and documented rollback.
+SMS and email must use HIPAA-eligible vendors with BAAs, delivery webhooks, and minimum-necessary template controls approved before production.
 
 **Rationale**
 
-HIPAA-aligned operations require repeatability, change control evidence, vulnerability management, and recoverability without imposing unnecessary manual burden on a small business.
+The PRD requires SMS and email reminders and OTP delivery while protecting PHI under HIPAA.
 
 **Consequences**
 
-- Critical and High security findings block release.
-- Infrastructure changes must be versioned and reviewed.
-- Deployment automation and rollback procedures must exist before production.
+- Supports delivery/status tracking and reminder actions.
+- Requires compliance review of vendors and message templates.
+- Reminder content must avoid unnecessary PHI.
 
 **Alternatives Considered**
 
-- Manual deployment with checklist — Not selected because it weakens repeatability and audit evidence.
-- Non-production automation only — Not selected because production changes need the strongest controls.
-- CI/CD TBD — Not selected because deployment posture was settled in the architecture interview.
+- Low-cost generic messaging vendors: not selected because HIPAA suitability and BAAs are required.
+- EHR-native reminders only: not selected because EHR capability is unknown and the PRD requires custom reminder actions and staff visibility.
+
+### ARD-DEC-007 — Automated CI/CD, IaC, Security Gates, and Rollback
+
+- **Status:** Accepted
+- **Related Requirements:** PRD-NFR-001, PRD-NFR-003
+
+**Decision**
+
+Use automated CI/CD with build, lint, tests, security scans, SBOM generation, infrastructure as code, and rollback-capable deployments with backward-compatible migrations.
+
+**Rationale**
+
+The system handles PHI and operational scheduling flows, so releases must be repeatable, reviewable, testable, and reversible.
+
+**Consequences**
+
+- Improves release reliability and auditability.
+- Requires CI/CD and IaC setup before production.
+- Database changes must be designed for safe rollback or forward-compatible deployment.
+
+**Alternatives Considered**
+
+- Manual deployments: not selected because they increase release and compliance evidence risk.
+- Vendor-console-only deployments: not selected because they do not provide sufficient repeatability and traceability.
 
 ## 8. API and Integration Architecture
 
-### ARD-API-001 — Patient Booking API
+### ARD-API-001 — Patient Scheduling API
 
 - **Type:** REST
-- **Operation/Topic:** `POST /api/patient/bookings`
+- **Operation/Topic:** `POST /api/patient/otp/request`, `POST /api/patient/otp/verify`, `GET /api/patient/availability`, `POST /api/patient/bookings`, `POST /api/patient/reschedules`
 - **Provider:** COMP-003
 - **Consumers:** COMP-001
-- **Authentication:** Patient passwordless magic link or one-time code validated by COMP-007
-- **Versioning:** URL-based API versioning when public/external contracts are introduced; internal initial route version is controlled by release version
+- **Authentication:** OTP-verified patient session for booking/rescheduling; unauthenticated initiation with rate limiting for OTP request.
+- **Versioning:** URI versioning or compatible additive changes; exact convention TBD by Engineering Lead.
 
 **Request/Input Contract**
 
-Includes patient context, existing/new patient indicator, appointment type ID, selected slot ID, contact details, reminder consent, and required new-patient intake and insurance fields when applicable. Exact intake and insurance fields are TBD; see ARC-OQ-006.
+Requests include minimum necessary identity-match fields, requested OTP channel, OTP code, eligible appointment criteria, selected slot identifier, appointment identifier for rescheduling, and action context. Exact schema is TBD after EHR integration discovery and clinic-approved matching rules.
 
 **Response/Output Contract**
 
-Returns booking confirmation status, appointment identifier, appointment time, provider, appointment type, reminder consent status, and user-safe errors when booking cannot be completed.
+Responses include verification status, eligible appointment types, source-system-confirmed availability, booking/reschedule confirmation only after EHR acceptance, no-slot state, cutoff-blocked state, and integration-unavailable state.
 
 **Error Handling**
 
-Returns validation errors for missing required fields, unavailable slots, ineligible appointment types, expired patient access tokens, and integration conflicts. Booking commands must use idempotency keys to prevent duplicate appointment creation on retries.
+Use safe patient-facing messages that do not expose unnecessary PHI. Booking/rescheduling errors must not create or display confirmed appointments without EHR confirmation. OTP failures must be rate-limited and audited. Integration timeouts/unavailability return a staff-follow-up or temporarily-unavailable path and record ARC-RISK-001 evidence.
 
-### ARD-API-002 — Patient Rescheduling API
+### ARD-API-002 — New-Patient Request API
 
 - **Type:** REST
-- **Operation/Topic:** `POST /api/patient/appointments/{appointmentId}/reschedule`
+- **Operation/Topic:** `POST /api/patient/appointment-requests`, `GET /api/staff/appointment-requests`
 - **Provider:** COMP-003
-- **Consumers:** COMP-001
-- **Authentication:** Patient passwordless magic link or one-time code validated by COMP-007
-- **Versioning:** URL-based API versioning when public/external contracts are introduced; internal initial route version is controlled by release version
+- **Consumers:** COMP-001, COMP-002
+- **Authentication:** Public submission with abuse controls for patients; staff MFA/RBAC for staff retrieval.
+- **Versioning:** URI versioning or compatible additive changes; exact convention TBD by Engineering Lead.
 
 **Request/Input Contract**
 
-Includes appointment ID, patient access token context, target slot ID, and idempotency key.
+Patient submission includes minimum necessary request details required for staff review. Exact fields are TBD after clinic operations defines the intake request content.
 
 **Response/Output Contract**
 
-Returns rescheduling confirmation status, updated appointment time, provider, appointment type, and user-safe errors when rescheduling cannot be completed.
+Patient response confirms that the request is pending staff review and not a confirmed appointment. Staff response lists pending requests with status and audit context.
 
 **Error Handling**
 
-Returns errors for expired access, appointment not eligible for rescheduling, cutoff violation, unavailable slot, EHR sync conflict, and duplicate command. Rescheduling must be idempotent and audited.
+Validation errors return accessible field-level messages. Submission errors must not create confirmed EHR appointments. PHI must be redacted from logs and telemetry.
 
 ### ARD-API-003 — Staff Schedule API
 
@@ -369,235 +408,254 @@ Returns errors for expired access, appointment not eligible for rescheduling, cu
 - **Operation/Topic:** `GET /api/staff/schedule?date={date}`
 - **Provider:** COMP-003
 - **Consumers:** COMP-002
-- **Authentication:** Staff authenticated session with MFA and RBAC authorization through COMP-007
-- **Versioning:** Internal route version controlled by release version
+- **Authentication:** Staff MFA session with RBAC authorization.
+- **Versioning:** URI versioning or compatible additive changes; exact convention TBD by Engineering Lead.
 
 **Request/Input Contract**
 
-Includes selected schedule date and staff authorization context.
+Staff requests include date and optional view filters. The API uses staff authorization context to limit access.
 
 **Response/Output Contract**
 
-Returns all appointments for the selected day with patient, provider, time, status, appointment type, and contact/reminder status.
+Response aggregates EHR daily schedule data with appointment status when available, reminder confirmation/delivery state, pending reschedule/cancellation context, pending new-patient request indicators, and stale/unavailable integration indicators.
 
 **Error Handling**
 
-Returns access-denied errors for unauthorized roles and user-safe availability errors when schedule data cannot be loaded. Staff schedule access must be audited under PRD-NFR-004.
+If EHR data cannot be refreshed, the API must identify or avoid stale schedule data per PRD-NFR-003 and expose an operational exception state to staff.
 
-### ARD-API-004 — Admin Configuration API
+### ARD-API-004 — EHR Scheduling Adapter Interface
 
-- **Type:** REST
-- **Operation/Topic:** `PUT /api/staff/config/appointment-types/{appointmentTypeId}` and `PUT /api/staff/config/rescheduling-cutoff`
-- **Provider:** COMP-003
-- **Consumers:** COMP-002
-- **Authentication:** Staff authenticated session with MFA and administrator/authorized-staff RBAC through COMP-007
-- **Versioning:** Internal route version controlled by release version
+- **Type:** REST | File | Adapter
+- **Operation/Topic:** `lookupAvailability`, `createAppointment`, `rescheduleAppointment`, `getDailySchedule`, `getAppointmentStatus`, `updateActionStatus` where supported
+- **Provider:** COMP-005
+- **Consumers:** COMP-003, COMP-006
+- **Authentication:** Vendor-supported secure integration authentication; exact method TBD after EHR discovery.
+- **Versioning:** Adapter contract versioned internally; vendor API version pinned when known.
 
 **Request/Input Contract**
 
-Includes appointment type eligibility flag or rescheduling cutoff rule, staff authorization context, and change reason where required by clinic policy.
+Adapter calls include minimum necessary patient, appointment, appointment type, slot, and date criteria required by the EHR. Exact vendor schema is TBD after the EHR product and capabilities are confirmed.
 
 **Response/Output Contract**
 
-Returns updated configuration state and effective rule metadata.
+Adapter responses return source-system-confirmed availability, appointment creation/reschedule outcomes, appointment status, daily schedule data, and structured integration error categories.
 
 **Error Handling**
 
-Returns validation errors for invalid rules and access-denied errors for unauthorized staff. Configuration changes must be audited.
+All write operations must be idempotency-aware where vendor support permits. On timeout, unavailable, or ambiguous outcome, the application must not present a confirmed booking/reschedule unless the EHR confirms it. Errors must be logged with PHI redaction and exposed to staff as operational exceptions.
 
-### ARD-API-005 — EHR Scheduling Integration
-
-- **Type:** REST | File
-- **Operation/Topic:** `FHIR/REST scheduling endpoints` or `CSV schedule import/export`
-- **Provider:** EXT-001 and COMP-005
-- **Consumers:** COMP-005 and EXT-001
-- **Authentication:** EHR-supported secure API authentication or restricted encrypted file exchange; exact method TBD by EHR capability
-- **Versioning:** FHIR version or vendor API version when available; CSV schema version required for file fallback
-
-**Request/Input Contract**
-
-For API integration, normalized requests include appointment types, provider availability, appointment create/update, and schedule retrieval data. For file fallback, CSV schemas include appointments, providers, availability, and update/export records.
-
-**Response/Output Contract**
-
-For API integration, normalized responses include success/failure, external appointment IDs, conflict state, and updated schedule details. For file fallback, output includes accepted/rejected import rows and export manifests.
-
-**Error Handling**
-
-Integration failures create retryable sync events where safe, staff-visible alerts when reconciliation is required, and audit records. Duplicate appointment creation must be prevented through external ID mapping and idempotency keys where supported.
-
-### ARD-API-006 — Reminder Vendor APIs and Webhooks
+### ARD-API-005 — Messaging Vendor APIs and Webhooks
 
 - **Type:** REST | Event
-- **Operation/Topic:** `POST /vendor/sms`, `POST /vendor/email`, `POST /api/webhooks/reminders/{vendor}`
-- **Provider:** COMP-006, EXT-002, EXT-003
-- **Consumers:** EXT-002, EXT-003, COMP-006
-- **Authentication:** Vendor API credentials stored in secrets manager; signed webhook validation where supported
-- **Versioning:** Vendor API version; internal webhook version controlled by route and release version
+- **Operation/Topic:** `sendSms`, `sendEmail`, delivery-status webhook, action-link callback
+- **Provider:** EXT-002, EXT-003, COMP-006
+- **Consumers:** COMP-004, COMP-006
+- **Authentication:** Vendor API credentials in managed secrets; signed webhooks where supported.
+- **Versioning:** Vendor API version pinned when known; application callback contract versioned.
 
 **Request/Input Contract**
 
-Send requests include destination channel, minimum necessary reminder content, template identifier, appointment reminder timing metadata, and vendor correlation ID. Webhooks include correlation ID, delivery status, failure reason, and timestamp.
+Outbound messages use approved templates with minimum-necessary content, recipient contact details, template variables, delivery metadata, and callback identifiers.
 
 **Response/Output Contract**
 
-Send responses include accepted/rejected status and vendor message ID. Webhook processing updates reminder status as delivered, failed, opted out, or not sent due to consent/opt-out state.
+Vendor responses and callbacks include delivery state, failure reason where available, and callback identifiers mapped to local reminder or OTP records.
 
 **Error Handling**
 
-Failed sends and failed callbacks are retried where safe. Persistent failures generate alerts and staff-visible reminder status. Reminder processing must not send through a channel after opt-out or without consent.
+Retries may be used for transient vendor failures if they do not duplicate patient actions or spam recipients. Webhooks must validate authenticity where supported and be idempotent by callback identifier.
 
 ## 9. Data Architecture
 
-### DATA-001 — Appointment
+### DATA-001 — Existing Patient Verification Record
 
-- **Purpose:** Represent scheduled visits, booking state, rescheduling changes, and staff schedule view entries.
-- **System of Record:** Existing scheduling/EHR system when integrated; application database as operational cache and interim workflow store when using CSV fallback.
+- **Purpose:** Track OTP request, delivery channel, verification outcome, expiry, rate-limit context, and audit evidence.
+- **System of Record:** Application operational data store; patient identity source remains EHR/practice management system where supported.
 - **Classification:** Restricted
-- **Retention:** Operational PHI retained only as long as needed for scheduling workflow; exact duration per clinic HIPAA policy is TBD; see ARC-OQ-009.
-- **Key Relationships:** Patient, provider, appointment type, reminder status, audit event, EHR external ID.
+- **Retention:** Per clinic HIPAA record-retention policy; exact duration TBD in ARC-OQ-004.
+- **Key Relationships:** Related to patient match context, OTP delivery event, booking/rescheduling session, and audit log.
 
-### DATA-002 — Patient Scheduling Profile
+### DATA-002 — Eligible Appointment Type Configuration
 
-- **Purpose:** Store minimum necessary patient identity/contact information needed for booking, rescheduling, reminders, and staff schedule view.
-- **System of Record:** Existing scheduling/EHR system when integrated for established patient records; application database for workflow-submitted scheduling profile data until synchronized or exported.
-- **Classification:** Restricted
-- **Retention:** Operational PHI retained only as long as needed for scheduling workflow; exact duration per clinic HIPAA policy is TBD; see ARC-OQ-009.
-- **Key Relationships:** Appointment, reminder consent, intake submission, insurance submission, audit event.
-
-### DATA-003 — New-Patient Intake and Insurance Submission
-
-- **Purpose:** Capture required intake and insurance information before confirming new-patient appointments.
-- **System of Record:** Existing scheduling/EHR system after successful synchronization/import; application database as workflow store until transfer or retention expiry.
-- **Classification:** Restricted
-- **Retention:** Operational PHI retained only as long as needed for scheduling workflow; exact duration per clinic HIPAA policy is TBD; see ARC-OQ-009.
-- **Key Relationships:** Patient scheduling profile, appointment, audit event, EHR export/sync record.
-
-### DATA-004 — Reminder Consent and Opt-Out
-
-- **Purpose:** Track SMS/email consent, opt-out state, and channel eligibility for reminders.
-- **System of Record:** Application database unless the EHR supports consent synchronization; final synchronization behavior TBD by EHR capability.
-- **Classification:** Restricted
-- **Retention:** Retained per clinic consent and HIPAA policy; exact duration TBD; see ARC-OQ-009.
-- **Key Relationships:** Patient scheduling profile, reminder event, audit event.
-
-### DATA-005 — Reminder Event and Delivery Status
-
-- **Purpose:** Track reminder scheduling, send attempts, vendor message IDs, delivery/failure status, and not-sent reasons.
-- **System of Record:** Application database.
-- **Classification:** Restricted
-- **Retention:** Retained per clinic HIPAA policy; exact duration TBD; see ARC-OQ-009.
-- **Key Relationships:** Appointment, patient scheduling profile, consent record, vendor callback, audit event.
-
-### DATA-006 — Appointment Type and Scheduling Configuration
-
-- **Purpose:** Store online-bookable eligibility flags and rescheduling cutoff rules.
-- **System of Record:** Application database for online scheduling configuration; appointment type source may be EHR when integrated.
+- **Purpose:** Define clinic-selected standard, low-risk appointment types available for online booking.
+- **System of Record:** Application configuration, aligned with clinic operations and EHR appointment type identifiers.
 - **Classification:** Internal
-- **Retention:** Retained while configuration is active and per change/audit retention policy after modification; exact duration TBD; see ARC-OQ-009.
-- **Key Relationships:** Appointment type, appointment, staff user, audit event.
+- **Retention:** Retain current and audit history per clinic configuration-retention policy; exact duration TBD in ARC-OQ-004.
+- **Key Relationships:** Maps to EHR appointment type identifiers and booking/rescheduling rules.
 
-### DATA-007 — Staff User and Role
+### DATA-003 — Appointment Availability and Confirmed Schedule Data
 
-- **Purpose:** Manage staff authentication, MFA enrollment state, role assignments, and authorization decisions.
-- **System of Record:** Application identity store or cloud identity service; final identity provider TBD.
+- **Purpose:** Support availability display, booking, rescheduling, and staff daily schedule view.
+- **System of Record:** Existing practice management/EHR scheduling system.
+- **Classification:** Restricted
+- **Retention:** Governed by EHR/practice management system policy; application should not persist confirmed schedule data beyond operational metadata/cache rules approved by compliance.
+- **Key Relationships:** Related to reminder state, staff daily view, booking/rescheduling workflows, and audit events.
+
+### DATA-004 — Reminder State and Delivery Status
+
+- **Purpose:** Track SMS/email reminder scheduling, delivery status, confirmations, cancellations, and reschedule requests.
+- **System of Record:** Application operational data store for reminder state; appointment truth remains EHR.
+- **Classification:** Restricted
+- **Retention:** Per clinic HIPAA record-retention policy; exact duration TBD in ARC-OQ-004.
+- **Key Relationships:** Related to EHR appointment identifier, messaging vendor callback identifier, patient action, and staff schedule display.
+
+### DATA-005 — Pending New-Patient Request
+
+- **Purpose:** Capture new-patient appointment requests for staff review without booking a confirmed slot.
+- **System of Record:** Application operational data store until staff processes the request; subsequent confirmed appointment remains EHR source of truth.
+- **Classification:** Restricted
+- **Retention:** Per clinic HIPAA record-retention policy; exact duration TBD in ARC-OQ-004.
+- **Key Relationships:** Related to staff review status, audit log, and possible later EHR patient/appointment record.
+
+### DATA-006 — Staff Account and Access Record
+
+- **Purpose:** Manage staff authentication, MFA status, roles, authorization, and access review evidence.
+- **System of Record:** Application identity/access store for launch.
 - **Classification:** Confidential
-- **Retention:** Retained while staff account is active and per clinic access/audit policy after deactivation; exact duration TBD; see ARC-OQ-009.
-- **Key Relationships:** Audit event, configuration change, schedule access.
+- **Retention:** Per clinic access-management and audit policy; exact duration TBD in ARC-OQ-004.
+- **Key Relationships:** Related to staff sessions, role assignments, audit events, and administrative actions.
 
-### DATA-008 — Audit Event
+### DATA-007 — Audit Log and Integration Error Record
 
-- **Purpose:** Record booking, rescheduling, schedule-view access, consent changes, opt-outs, configuration changes, authentication/security events, and integration events.
-- **System of Record:** Application audit store in PostgreSQL and/or cloud audit logging service.
-- **Classification:** Confidential; Restricted when event metadata contains PHI.
-- **Retention:** Retained per clinic HIPAA policy; exact duration TBD; see ARC-OQ-009.
-- **Key Relationships:** Staff user, patient scheduling profile, appointment, consent record, integration event.
+- **Purpose:** Record security-relevant events, PHI-sensitive operational actions, OTP verification events, booking/rescheduling attempts, reminder actions, and integration failures.
+- **System of Record:** Application operational data store and observability/audit platform.
+- **Classification:** Restricted
+- **Retention:** Per clinic HIPAA/security audit-retention policy; exact duration TBD in ARC-OQ-004.
+- **Key Relationships:** Related to patient sessions, staff accounts, EHR adapter calls, messaging callbacks, and incident investigations.
 
 ### Data Migration
 
-- **Required:** TBD; see ARC-OQ-010.
-- **Approach:** If EHR integration is available, initial synchronization imports appointment types, providers, availability, and current schedule data required for launch. If EHR integration is unavailable, staff use validated CSV import/export schemas for the pilot. Historical data migration is not required unless the clinic decides existing operational schedule data must be preloaded beyond what is needed for launch.
+- **Required:** No
+- **Approach:** No migration of confirmed schedule data. Configure eligible appointment types, cutoff rules, vendor credentials, staff accounts, environments, and operational settings before launch. Seed only required operational settings; confirmed appointment and patient schedule state remains in the EHR/practice management system.
 
 ## 10. Security Architecture
 
-### ARD-SEC-001 — HIPAA-Aligned PHI Protection
+### ARD-SEC-001 — HIPAA-Conscious PHI Handling
 
-- **Related Requirements:** PRD-NFR-001, PRD-NFR-003, PRD-NFR-004
+- **Related Requirements:** PRD-NFR-001, PRD-FR-001, PRD-FR-006, PRD-FR-008
 
 The implementation must:
 
-- Use BAA-covered vendors and HIPAA-eligible managed services for any production component that stores, processes, transmits, or can access PHI.
-- Encrypt PHI in transit and at rest in production.
-- Enforce staff RBAC with MFA and least-privilege access.
-- Enforce patient passwordless access controls for booking and rescheduling.
-- Record audit events for PHI access, booking, rescheduling, consent, opt-out, configuration, and integration actions.
-- Apply minimum necessary PHI handling in data models, APIs, logs, reminders, and staff displays.
-- Restrict reminder content to minimum necessary appointment information and avoid diagnosis, procedure details, or clinical notes.
-- Store secrets only in an approved secrets manager and rotate credentials when compromised or per clinic policy.
-- Generate an SBOM for each production release and run dependency, container, and IaC scanning in CI.
+- Use HIPAA-eligible vendors and signed BAAs for PHI-bearing cloud, SMS, email, and other processing services.
+- Apply minimum-necessary PHI principles to booking, rescheduling, reminders, OTPs, staff views, logs, and alerts.
+- Obtain clinic HIPAA compliance review approval before production launch.
+- Require reminder templates to be approved for minimum-necessary PHI disclosure before production use.
+- Redact PHI from logs, traces, metrics, alerts, and error messages unless explicitly approved for audit storage.
+- Record verification, booking/rescheduling, reminder action, staff access, and integration exception events for audit or operational review.
 
 The implementation must not:
 
-- Store PHI in plaintext at rest.
-- Log PHI in application logs, metrics, traces, error tracking, CI logs, or deployment logs.
-- Send reminders through a channel without consent or after opt-out.
-- Include diagnosis, procedure details, or clinical notes in SMS or email reminders.
-- Use PHI-handling vendors in production without required BAA coverage.
-- Allow unauthorized staff to configure appointment eligibility or rescheduling cutoff rules.
+- Send reminder or OTP content that exposes unnecessary PHI.
+- Store confirmed schedule data as authoritative outside the EHR/practice management system.
+- Display confirmed booking or rescheduling success unless the EHR/source scheduling system has accepted the write.
+- Use vendors that process PHI before HIPAA suitability and BAA status are reviewed.
+
+### ARD-SEC-002 — Patient OTP Verification
+
+- **Related Requirements:** PRD-FR-001, PRD-NFR-001
+
+The implementation must:
+
+- Verify existing patients with one-time codes sent to phone or email before booking or rescheduling.
+- Enforce OTP expiry, retry limits, request rate limits, and safe failure handling.
+- Record verification events without exposing unnecessary PHI.
+- Prevent booking or rescheduling if identity cannot be matched.
+
+The implementation must not:
+
+- Allow unauthenticated existing-patient booking or rescheduling.
+- Reveal whether sensitive patient attributes exist beyond what is needed for safe user guidance.
+
+### ARD-SEC-003 — Staff MFA and RBAC
+
+- **Related Requirements:** PRD-FR-008, PRD-NFR-001
+
+The implementation must:
+
+- Require MFA for staff access to daily schedule, pending requests, reminder status, and exception views.
+- Enforce role-based authorization on staff APIs and UI functions.
+- Log staff authentication, authorization failures, and PHI-access-relevant events.
+- Support account lifecycle administration and access review.
+
+The implementation must not:
+
+- Permit shared staff accounts for production use.
+- Allow staff-only functions from patient sessions.
+
+### ARD-SEC-004 — Secure SDLC and Supply Chain Controls
+
+- **Related Requirements:** PRD-NFR-001
+
+The implementation must:
+
+- Run dependency, container, and code security scans in CI/CD.
+- Block release on critical and high dependency/container/code-scan findings unless formally risk-accepted by the security owner.
+- Generate an SBOM for every release.
+- Protect production secrets through managed secrets storage.
+
+The implementation must not:
+
+- Store secrets in source control, application logs, or client-side code.
+- Deploy PHI-bearing changes without required build, test, lint, and security gates.
 
 ### Security Controls
 
-- **Authentication:** Staff authenticate with role-based accounts and MFA; patients use passwordless magic links or one-time codes for booking/rescheduling access.
-- **Authorization:** RBAC enforces patient, front-desk staff, clinic administrator, and technical support access boundaries; least privilege is required for PHI and configuration actions.
-- **Secrets Management:** Production secrets must be stored in the selected cloud/provider secrets manager; secrets must not be committed to source control or exposed in logs.
-- **Encryption:** TLS is required for data in transit; managed encryption is required for PostgreSQL, backups, object/file storage, logs containing audit data, and integration file exchange at rest.
-- **Audit Logging:** Audit events must capture actor, timestamp, action, target/resource, outcome, and correlation ID for scheduling actions, staff access, consent changes, opt-outs, configuration changes, and integration events.
-- **Dependency/CVE Scanning:** Dependency, container, and IaC scans run in CI; Critical and High findings block release unless formally risk-accepted by the Security Reviewer.
-- **SBOM:** Required for each production release.
+- **Authentication:** Patient OTP verification for booking/rescheduling; application-managed staff accounts with MFA for staff functions.
+- **Authorization:** RBAC for staff APIs and UI; verified patient sessions limited to the specific booking/rescheduling/reminder-action context.
+- **Secrets Management:** Managed secrets vault; no secrets in source control, logs, or client bundles.
+- **Encryption:** TLS for data in transit; encrypted managed database/storage at rest; key access audited.
+- **Audit Logging:** Audit OTP events, staff access, booking/reschedule attempts, reminder actions, configuration changes, vendor callbacks, and integration exceptions with PHI redaction controls.
+- **Dependency/CVE Scanning:** Block critical and high dependency, container, and code-scan findings unless formally risk-accepted.
+- **SBOM:** Required for every release.
 
 ## 11. Reliability, Performance, and Scalability
 
-### ARD-OPS-001 — Availability Target
+### ARD-OPS-001 — Application Availability
 
-- **Target:** TBD; owner Technical Owner; monthly uptime target must be defined before production readiness approval; see ARC-OQ-011.
-- **Validation Method:** Production readiness review must include uptime target, monitoring evidence, failure-mode review, and alert configuration.
+- **Target:** 99.5% monthly uptime for patient-facing booking and reminder-action application components, excluding third-party EHR/SMS/email outages.
+- **Validation Method:** Production uptime monitoring, synthetic checks for patient entry points, incident review, and monthly availability reporting.
 
-### ARD-OPS-002 — Patient Booking Performance Target
+### ARD-OPS-002 — Source-of-Truth Integrity
 
-- **Target:** TBD; owner Technical Owner; p95 page/API response target for patient booking and rescheduling flows must be defined before production readiness approval; see ARC-OQ-011.
-- **Validation Method:** Performance tests must exercise booking and rescheduling flows with representative launch traffic and report p95 response times.
+- **Target:** 100% of displayed booking and rescheduling completions must have source-system confirmation from the EHR/practice management system.
+- **Validation Method:** Integration contract tests, transactional workflow tests, audit sampling, and reconciliation between application events and EHR outcomes.
 
-### ARD-OPS-003 — Reminder Processing Target
+### ARD-OPS-003 — Safe Integration Failure Behavior
 
-- **Target:** TBD; owner Technical Owner; maximum reminder job delay from scheduled send time must be defined before production readiness approval; see ARC-OQ-011.
-- **Validation Method:** Scheduled job tests and production monitoring must measure reminder enqueue/send latency and alert on missed thresholds.
+- **Target:** 100% of EHR integration unavailable, timeout, or ambiguous write outcomes must avoid creating or displaying unconfirmed completed appointments.
+- **Validation Method:** Failure-injection tests, adapter timeout tests, end-to-end negative tests, and staff exception-view acceptance testing.
 
-### ARD-OPS-004 — EHR Synchronization Target
+### ARD-OPS-004 — Patient and Staff Interaction Performance
 
-- **Target:** TBD; owner Technical Owner; synchronization freshness and retry targets must be defined after EHR capabilities are known; see ARC-OQ-005 and ARC-OQ-011.
-- **Validation Method:** Integration tests and operational dashboards must measure sync success rate, retry outcomes, stale cache age, and reconciliation events.
+- **Target:** 95% of non-EHR-dependent page/API interactions complete within 2 seconds under expected launch load.
+- **Validation Method:** Load tests for application-owned flows, frontend performance tests, API latency dashboards, and release performance reports.
 
-### ARD-OPS-005 — Scalability Constraint for Pilot Rollout
+### ARD-OPS-005 — Accessibility Quality
 
-- **Target:** Initial scale target is TBD because appointment volume and launch KPIs are not quantified; see ARC-OQ-012.
-- **Validation Method:** Load test scenarios must be based on pilot appointment volume assumptions approved before production readiness.
+- **Target:** Patient-facing booking, rescheduling, reminder-action, and new-patient request flows pass WCAG 2.1 AA review before launch.
+- **Validation Method:** Automated accessibility checks, keyboard-only testing, screen-reader review, and acceptance testing against PRD-NFR-002.
+
+### ARD-OPS-006 — Reminder Operational Visibility
+
+- **Target:** 100% of reminder send attempts produce a recorded delivery status, failure status, or vendor-unavailable exception visible for operational review.
+- **Validation Method:** Messaging vendor callback tests, reminder job integration tests, and staff/operations dashboard acceptance testing.
 
 ## 12. Observability
 
-- **Logging:** Use structured application logs with correlation IDs and no PHI. Log security-relevant and operational events needed to troubleshoot booking, rescheduling, reminder, and integration workflows.
-- **Metrics:** Track booking attempts/success/failure, rescheduling attempts/success/failure, reminder sends/delivery/failures/not-sent reasons, EHR sync success/failure, API latency, job latency, error rates, and staff schedule view usage.
-- **Tracing:** Use request correlation across patient/staff UI, API handlers, domain services, integration adapter, reminder service, and persistence. Full distributed tracing tool selection is TBD with cloud provider choice.
-- **Alerting:** Alert on failed sync jobs, persistent reminder failures, elevated API errors, job backlog, security scan failures in CI, and authentication/security anomalies where supported.
-- **Sensitive Data Restrictions:** PHI must not be written to logs, metrics, traces, error tracking, deployment logs, or CI output. Audit logs may reference PHI-linked resources by identifiers and must be access-controlled.
+- **Logging:** Use structured application, integration, security, and audit logs with PHI redaction and correlation IDs across patient, staff, EHR, SMS, and email flows.
+- **Metrics:** Track application uptime, API latency, OTP success/failure, booking attempts, source-system confirmations, reschedule attempts, reminder sends, delivery status, reminder actions, integration errors, and outside-hours online bookings.
+- **Tracing:** Trace backend orchestration across portal APIs, EHR adapter calls, messaging vendor calls, database operations, and callbacks, with PHI-safe attributes only.
+- **Alerting:** Alert on application downtime, elevated API errors, EHR adapter failures, SMS/email delivery failures, security scan failures, suspicious OTP rates, and reminder job failures.
+- **Sensitive Data Restrictions:** Do not log full patient identifiers, OTP codes, detailed appointment reasons, message bodies, or unnecessary PHI in logs, traces, metrics, alerts, or client-side analytics.
 
 ## 13. Deployment Architecture
 
-- **Environments:** Development, test, staging, and production are required before production launch; exact environment naming and cloud accounts/projects are TBD with provider selection.
-- **Deployment Model:** Web application deployed to managed compute/serverless/container hosting on a HIPAA-eligible cloud service under BAA; exact model TBD by cloud provider selection.
-- **CI/CD:** Automated build, test, lint, security scan, SBOM generation, and deployment pipeline required before production.
-- **Configuration Management:** Environment-specific configuration through IaC and secrets manager; no secrets in source control.
-- **Rollback:** Documented rollback required for application releases, database migrations, configuration changes, and infrastructure changes before production.
-- **Infrastructure as Code:** Required; specific tool TBD with cloud provider selection; see ARC-OQ-002.
+- **Environments:** Development, test, staging, and production with isolated data, configuration, credentials, and access controls.
+- **Deployment Model:** Managed cloud deployment for React frontend, Node.js/TypeScript backend, managed database, managed secrets, observability, and integration configuration.
+- **CI/CD:** Automated CI/CD with build, lint, unit tests, integration tests, contract tests, accessibility checks, security scans, SBOM generation, IaC validation, and deployment promotion.
+- **Configuration Management:** Environment-specific configuration through managed configuration/secrets services; clinic rules for appointment eligibility, cutoff windows, and reminder timing must be configurable.
+- **Rollback:** Automated rollback to the prior application version; database migrations must be backward-compatible or otherwise designed for safe rollback/roll-forward.
+- **Infrastructure as Code:** Required; exact tool TBD by Engineering Lead in ARC-OQ-005.
 
 ## 14. Testing Architecture
 
@@ -612,71 +670,73 @@ Required test levels:
 
 Minimum quality expectations:
 
-- **Coverage Threshold:** TBD before production readiness approval; owner Engineering Lead; see ARC-OQ-013.
-- **Blocking Security Severity:** Critical and High dependency, container, application, and IaC security findings block release unless formally risk-accepted by the Security Reviewer.
-- **Required Build/Lint Checks:** TypeScript type check, unit tests, integration tests, contract tests for EHR/reminder interfaces, end-to-end tests for booking/rescheduling/staff schedule flows, WCAG 2.1 AA accessibility checks for patient flows, dependency/container/IaC scans, SBOM generation, and production build validation.
+- **Coverage Threshold:** Minimum 80% coverage for backend domain/integration orchestration and critical frontend flows.
+- **Blocking Security Severity:** Critical and high dependency, container, and code-scan findings block release unless formally risk-accepted by the security owner.
+- **Required Build/Lint Checks:** TypeScript type checks, frontend build, backend build, lint, unit tests, integration tests, EHR adapter contract tests or mocks, end-to-end tests for critical booking/rescheduling/reminder/staff flows, accessibility checks for patient-facing flows, security scans, SBOM generation, and IaC validation.
 
 ## 15. Architecture Constraints
 
-- ARC-CON-001 — The system must implement HIPAA-aligned PHI protections required by PRD-NFR-001 and project compliance requirements.
-- ARC-CON-002 — Production PHI-handling vendors and managed services must have BAA coverage before production use.
-- ARC-CON-003 — The clinic is a small business; the architecture must prefer managed services and avoid unnecessary operational complexity.
-- ARC-CON-004 — The first release must support only appointment types marked as eligible for online booking.
-- ARC-CON-005 — Existing scheduling/EHR capabilities determine whether launch uses FHIR/REST integration or CSV import/export fallback.
-- ARC-CON-006 — The appointment system of record is the existing scheduling/EHR system when integration is available; otherwise the application supports interim operational workflow and export/import.
-- ARC-CON-007 — Reminder vendors must support consent enforcement, opt-out handling, delivery/failure status, and HIPAA-aligned agreements when handling PHI.
-- ARC-CON-008 — Patient-facing booking and rescheduling flows must be mobile-first and WCAG 2.1 AA conformant.
-- ARC-CON-009 — The target release date is not set and must not be assumed by the architecture.
-- ARC-CON-010 — Reminder content must use minimum necessary PHI and must not include diagnosis, procedure details, or clinical notes.
-- ARC-CON-011 — CI/CD, IaC, rollback, scanning, and SBOM generation are required before production.
+- ARC-CON-001 — The clinic is a small business, so architecture must avoid unnecessary operational complexity and prefer managed services where appropriate.
+- ARC-CON-002 — The product operates in healthcare and must support HIPAA-compliant PHI handling.
+- ARC-CON-003 — PHI-bearing vendors and managed services require HIPAA suitability review and BAAs before production use.
+- ARC-CON-004 — The existing practice management/EHR scheduling system is the source of truth for availability, confirmed bookings, rescheduling, appointment status, and daily schedule display.
+- ARC-CON-005 — Direct online booking is limited to clinic-selected standard, low-risk appointment types.
+- ARC-CON-006 — Existing-patient rescheduling is limited to outside a clinic-defined cutoff window.
+- ARC-CON-007 — New patients can create pending requests only and cannot directly book confirmed slots.
+- ARC-CON-008 — Patient-facing booking, rescheduling, reminder-action, and new-patient request flows must meet WCAG 2.1 AA.
+- ARC-CON-009 — The application must not display a completed booking or reschedule without EHR/source-system confirmation.
+- ARC-CON-010 — Confirmed schedule data must not be migrated into the application database for launch.
+- ARC-CON-011 — Production deployments require automated CI/CD, security gates, SBOM generation, IaC, and rollback support.
+- ARC-CON-012 — Application-held operational data retention must follow clinic HIPAA record-retention policy configured per data type before launch.
 
 ## 16. Risks and Trade-offs
 
 | ID | Risk/Trade-off | Impact | Mitigation |
 |---|---|---|---|
-| ARC-RISK-001 | Existing scheduling/EHR integration may be unavailable, costly, or limited | Could delay launch or require staff reconciliation | Use FHIR/REST when available and CSV import/export fallback when unavailable; document final launch approach |
-| ARC-RISK-002 | Cloud provider and IaC tool are TBD | Deployment design and control implementation cannot be finalized | Require HIPAA-eligible services and BAA before production; close ARC-OQ-002 before build-out |
-| ARC-RISK-003 | PHI retention durations are TBD | Data lifecycle controls may be incomplete | Define clinic HIPAA retention policy before production and enforce retention jobs/configuration |
-| ARC-RISK-004 | Reliability and performance targets are TBD | Production readiness cannot be objectively assessed | Define measurable uptime, latency, reminder delay, sync freshness, and scale targets before production readiness approval |
-| ARC-RISK-005 | CSV fallback introduces manual handling of PHI | File exchange may increase privacy and operational risk | Encrypt files, restrict access, validate schemas, audit imports/exports, and prefer API integration when available |
-| ARC-RISK-006 | Reminder vendor BAA or webhook support may be insufficient | SMS/email reminder launch could be delayed or delivery status incomplete | Select vendors early; require BAA, consent/opt-out support, delivery status, and webhook security |
-| ARC-RISK-007 | Custom application increases engineering ownership | The clinic must maintain secure delivery, monitoring, and operations | Use managed services, automated CI/CD, security scans, SBOM, and documented rollback |
-| ARC-RISK-008 | Minimum necessary reminder content may reduce message specificity | Patients may need to click through for details rather than seeing details in SMS/email | Use privacy-conscious templates and secure links for additional details when needed |
+| ARC-RISK-001 | EHR integration capabilities may not support required booking, rescheduling, status, or daily schedule operations | High | Use adapter pattern, validate capabilities early, keep unsupported operations under Open Architecture Questions, and fail safely without unconfirmed appointments. |
+| ARC-RISK-002 | Reminder or OTP content may expose more PHI than clinic policy permits | High | Require minimum-necessary template design, HIPAA review, BAA review, and PHI redaction in logs/telemetry. |
+| ARC-RISK-003 | Patient identity matching may be unreliable due to incomplete phone/email records | High | Provide safe failure handling, block booking/rescheduling on failed match, and route to staff-contact or request-review path. |
+| ARC-RISK-004 | Application-managed staff accounts add account lifecycle burden | Medium | Require MFA, RBAC, access review, audit logging, and consider future SSO if clinic identity capability becomes available. |
+| ARC-RISK-005 | Minimal local persistence reduces PHI footprint but increases dependency on EHR availability | Medium | Use safe degraded states, staff exception visibility, monitoring, and no confirmed writes without EHR confirmation. |
+| ARC-RISK-006 | Unknown retention policy could delay production approval | Medium | Configure retention per data type before launch and track under ARC-OQ-004. |
+| ARC-RISK-007 | Small-business support capacity may be strained by after-hours exceptions | Medium | Define production support owner, escalation paths, and operational alerts before launch. |
+| ARC-RISK-008 | Performance target excludes EHR-dependent latency, so end-to-end booking may vary by EHR responsiveness | Medium | Measure EHR adapter latency separately, show safe loading/error states, and add targets after integration benchmarks. |
 
 ## 17. Open Architecture Questions
 
 | ID | Question | Owner | Status | Decision/Due Date |
 |---|---|---|---|---|
-| ARC-OQ-001 | Who is the named Architecture Owner for this ARD? | Engineering Lead | Open | TBD |
-| ARC-OQ-002 | Which cloud provider, managed hosting model, and IaC tool will be used for HIPAA-aligned production deployment? | Technical Owner | Open | TBD |
-| ARC-OQ-003 | Which stable Next.js, TypeScript, Node.js, and PostgreSQL versions will be selected for implementation? | Engineering Lead | Open | TBD |
-| ARC-OQ-004 | Which identity provider or authentication implementation will support staff MFA and patient passwordless access? | Technical Owner | Open | TBD |
-| ARC-OQ-005 | Which existing scheduling/EHR system is used, and which FHIR/REST or file integration capabilities does it provide? | Technical Owner | Open | TBD |
-| ARC-OQ-006 | Which exact new-patient intake and insurance fields are required before confirmation? | Clinic Administrator | Open | TBD |
-| ARC-OQ-007 | Which SMS and email vendors will be used, and do they provide required BAAs, delivery/failure status, opt-out support, and webhook security? | Technical Owner | Open | TBD |
-| ARC-OQ-008 | What exact rescheduling cutoff rule will the clinic configure for launch? | Clinic Administrator | Open | TBD |
-| ARC-OQ-009 | What are the clinic-approved retention durations for operational PHI, consent records, reminder events, audit logs, backups, and integration files? | Compliance Owner | Open | TBD |
-| ARC-OQ-010 | Is any initial schedule, provider, appointment type, or patient data migration required beyond EHR synchronization or CSV import for launch? | Technical Owner | Open | TBD |
-| ARC-OQ-011 | What measurable production targets are required for uptime, p95 latency, reminder job delay, EHR sync freshness, and retry behavior? | Technical Owner | Open | TBD |
-| ARC-OQ-012 | What pilot volume assumptions should performance and scalability tests use? | Product Owner | Open | TBD |
-| ARC-OQ-013 | What automated test coverage threshold is required before production readiness approval? | Engineering Lead | Open | TBD |
-| ARC-OQ-014 | Who are the named Security Reviewer and Engineering Lead approvers? | Product Owner | Open | TBD |
+| ARC-OQ-001 | Who is the named Architecture Owner for ARD-OPSR? | Product Owner | Open | TBD |
+| ARC-OQ-002 | Who are the named ARD contributors, security reviewer, and engineering lead? | Product Owner | Open | TBD |
+| ARC-OQ-003 | What repository structure and exact repository paths will be used for frontend, backend, database, integration, and infrastructure code? | Engineering Lead | Open | TBD |
+| ARC-OQ-004 | What exact retention periods apply per data type for OTP records, reminder state, pending requests, staff access records, audit logs, and integration errors under clinic HIPAA policy? | Compliance Owner | Open | TBD |
+| ARC-OQ-005 | Which IaC tool, managed cloud provider, managed database product, secrets service, and observability platform will be selected? | Engineering Lead | Open | TBD |
+| ARC-OQ-006 | Which practice management/EHR system is in use, and which integration operations, authentication methods, latency, rate limits, and webhook/file/API capabilities are available? | Technical Owner | Open | TBD |
+| ARC-OQ-007 | Which exact appointment types are approved as standard, low-risk, and eligible for online booking? | Clinic Operations | Open | TBD |
+| ARC-OQ-008 | What is the clinic-defined cutoff window for online rescheduling? | Clinic Operations | Open | TBD |
+| ARC-OQ-009 | What clinic-approved next step should patients see when no slots match, identity cannot be matched, or the scheduling integration is unavailable? | Product Owner | Open | TBD |
+| ARC-OQ-010 | What reminder timing rules apply for SMS and email reminders? | Clinic Operations | Open | TBD |
+| ARC-OQ-011 | What are the baseline counts and post-baseline numeric targets for outside-hours bookings, total booking volume, reminder confirmations, cancellations, and reschedule requests? | Product Owner | Open | TBD |
+| ARC-OQ-012 | What production support owner and escalation process will handle failed bookings, reminder failures, integration outages, and pending requests? | Clinic Operations | Open | TBD |
+| ARC-OQ-013 | What exact patient identity matching fields are approved for OTP initiation, and which source system supplies them? | Compliance Owner / Technical Owner | Open | TBD |
+| ARC-OQ-014 | What exact API versioning convention will be used for application REST APIs? | Engineering Lead | Open | TBD |
+| ARC-OQ-015 | What target release date and production readiness review date will be used? | Product Owner | Open | TBD |
 
 ## 18. Feature Mapping
 
 | Feature | Relevant Components | Decision IDs | Interface IDs | Security IDs |
 |---|---|---|---|---|
-| FEAT-001 | COMP-002, COMP-003, COMP-004, COMP-007, COMP-008 | ARD-DEC-001, ARD-DEC-002, ARD-DEC-004 | ARD-API-004 | ARD-SEC-001 |
-| FEAT-002 | COMP-001, COMP-003, COMP-004, COMP-005, COMP-007, COMP-008 | ARD-DEC-001, ARD-DEC-002, ARD-DEC-003, ARD-DEC-004, ARD-DEC-005 | ARD-API-001, ARD-API-005 | ARD-SEC-001 |
-| FEAT-003 | COMP-001, COMP-003, COMP-004, COMP-005, COMP-007, COMP-008 | ARD-DEC-001, ARD-DEC-002, ARD-DEC-003, ARD-DEC-004, ARD-DEC-005 | ARD-API-002, ARD-API-004, ARD-API-005 | ARD-SEC-001 |
-| FEAT-004 | COMP-001, COMP-004, COMP-006, COMP-008 | ARD-DEC-001, ARD-DEC-002, ARD-DEC-006 | ARD-API-006 | ARD-SEC-001 |
-| FEAT-005 | COMP-002, COMP-003, COMP-004, COMP-005, COMP-007, COMP-008 | ARD-DEC-001, ARD-DEC-002, ARD-DEC-003, ARD-DEC-004, ARD-DEC-005 | ARD-API-003, ARD-API-005 | ARD-SEC-001 |
-| FEAT-006 | COMP-003, COMP-004, COMP-005, COMP-008 | ARD-DEC-003, ARD-DEC-005, ARD-DEC-006 | ARD-API-005 | ARD-SEC-001 |
+| FEAT-001 | COMP-001, COMP-003, COMP-004, COMP-005, COMP-007, COMP-009 | ARD-DEC-001, ARD-DEC-002, ARD-DEC-003, ARD-DEC-004 | ARD-API-001, ARD-API-004 | ARD-SEC-001, ARD-SEC-002, ARD-SEC-004 |
+| FEAT-002 | COMP-001, COMP-003, COMP-004, COMP-005, COMP-007, COMP-009 | ARD-DEC-001, ARD-DEC-002, ARD-DEC-003, ARD-DEC-004 | ARD-API-001, ARD-API-004 | ARD-SEC-001, ARD-SEC-002, ARD-SEC-004 |
+| FEAT-003 | COMP-001, COMP-002, COMP-003, COMP-007, COMP-009 | ARD-DEC-001, ARD-DEC-003, ARD-DEC-004 | ARD-API-002 | ARD-SEC-001, ARD-SEC-004 |
+| FEAT-004 | COMP-001, COMP-002, COMP-003, COMP-006, COMP-007, COMP-009 | ARD-DEC-001, ARD-DEC-003, ARD-DEC-006 | ARD-API-005 | ARD-SEC-001, ARD-SEC-004 |
+| FEAT-005 | COMP-002, COMP-003, COMP-005, COMP-006, COMP-007, COMP-008, COMP-009 | ARD-DEC-001, ARD-DEC-002, ARD-DEC-003, ARD-DEC-005 | ARD-API-003, ARD-API-004 | ARD-SEC-001, ARD-SEC-003, ARD-SEC-004 |
+| FEAT-006 | COMP-001, COMP-002, COMP-003, COMP-005, COMP-007, COMP-009 | ARD-DEC-002, ARD-DEC-003, ARD-DEC-007 | ARD-API-001, ARD-API-003, ARD-API-004 | ARD-SEC-001, ARD-SEC-004 |
 
 ## 19. Approval
 
 | Role | Name | Decision | Date |
 |---|---|---|---|
 | Solution Architect | TBD; see ARC-OQ-001 | Pending | TBD |
-| Security Reviewer | TBD; see ARC-OQ-014 | Pending | TBD |
-| Engineering Lead | TBD; see ARC-OQ-014 | Pending | TBD |
+| Security Reviewer | TBD; see ARC-OQ-002 | Pending | TBD |
+| Engineering Lead | TBD; see ARC-OQ-002 | Pending | TBD |

@@ -1,6 +1,6 @@
 # Product Requirements Document (PRD)
 
-> Requirement source: “Our clinic loses bookings because patients can only book by phone during office hours. We want patients to book, reschedule and get reminders online. Staff should see the day's schedule in one place.”
+> Replace all `<PLACEHOLDER>` values. Keep requirement IDs stable after approval so downstream ARD and feature specifications retain traceability.
 
 ## Document Metadata
 
@@ -10,132 +10,179 @@
 - **Status:** Draft
 - **Owner:** TBD
 - **Contributors:** TBD
-- **Last Updated:** 2026-11-18
+- **Last Updated:** 2026-11-19
 
 ---
 
 ## 1. Executive Summary
 
-The clinic needs an online scheduling capability because patients currently can only book by phone during office hours, leading to lost bookings. Staff-reported missed calls and patient complaints indicate the problem exists, although quantified baseline data is not yet available.
+The clinic currently loses bookings because patients can only book appointments by phone during office hours. This product will allow patients to book selected standard, low-risk appointment types online, reschedule eligible appointments, and receive SMS and email reminders.
 
-This product will let existing and new patients book selected appointment types online, reschedule eligible appointments within clinic-configured rules, and receive SMS and email reminders. Front-desk staff will be able to view the day’s schedule in one place, including appointment status and reminder/contact status.
+Existing patients will verify identity using a one-time code sent to phone or email before booking or rescheduling. New patients will be able to submit appointment requests for staff review without directly booking a slot. Staff will see the day’s schedule in one place, including appointment status and reminder confirmations, using the existing practice management/EHR scheduling system as the source of truth.
 
-The first release will prioritize reducing lost bookings caused by phone-only scheduling while maintaining HIPAA-aligned controls appropriate for a small healthcare business.
+The first release prioritizes reducing lost bookings outside office hours while protecting PHI under HIPAA and keeping staff workflows centered on the existing schedule system.
 
 ## 2. Problem Statement
 
-Patients who want to schedule outside office hours cannot complete bookings without calling the clinic during business hours. This creates missed booking opportunities for patients and front-desk staff, and the clinic has staff-reported missed calls and patient complaints with no quantified baseline yet. Staff also need a consolidated view of the day’s schedule to manage appointments and follow-up efficiently.
+Patients who want to book appointments outside office hours cannot complete bookings because the clinic currently supports booking by phone only during office hours. This creates lost booking opportunities for the clinic and inconvenience for patients. Staff also need a consolidated view of the day’s schedule, appointment status, and reminder confirmations.
 
 ## 3. Product Vision
 
-Create a HIPAA-aligned, mobile-first online scheduling experience where eligible patients can book and reschedule selected appointment types without calling the clinic, receive compliant reminders, and enable staff to manage the day’s schedule from one consolidated operational view.
+Patients can complete routine appointment scheduling tasks online at their convenience, while staff retain control over availability, appointment types, and new-patient review. The scheduling experience is HIPAA-conscious, integrated with the existing practice management/EHR schedule, and gives staff one operational view of the day.
 
 ## 4. Goals and Success Measures
 
 ### 4.1 Goals
 
-- Reduce lost bookings caused by phone-only office-hour scheduling.
-- Enable existing and new patients to book selected appointment types online with safeguards before confirmation.
-- Allow patients to reschedule eligible appointments up to a clinic-configured cutoff time.
-- Send SMS and email reminders with consent, opt-out, and staff-visible delivery/failure status.
-- Give front-desk staff a consolidated view of the day’s schedule.
-- Maintain HIPAA-aligned handling of protected health information.
+- Reduce lost bookings outside office hours.
+- Enable existing patients to book and reschedule selected standard, low-risk appointments online.
+- Enable new patients to submit appointment requests for staff review.
+- Send appointment reminders by SMS and email with confirmation, cancellation, and reschedule-request actions.
+- Give staff one daily schedule view showing appointments, statuses, and reminder confirmations.
+- Maintain HIPAA-compliant handling of PHI and reminder content.
 
 ### 4.2 Success Measures
 
 | ID | Measure | Baseline | Target | Measurement Method |
 |---|---|---:|---:|---|
-| KPI-001 | Online booking adoption | Not quantified; see OQ-001 | Not set; see OQ-001 | Percentage of eligible appointments booked online during the measurement period |
-| KPI-002 | Reduction in missed scheduling calls | Not quantified; see OQ-001 | Not set; see OQ-001 | Comparison of missed scheduling calls before and after launch |
-| KPI-003 | Reminder delivery rate | Not quantified; see OQ-001 | Not set; see OQ-001 | Percentage of scheduled reminders successfully delivered by channel |
-| KPI-004 | Staff schedule usage | Not quantified; see OQ-001 | Not set; see OQ-001 | Count or percentage of front-desk staff using the day schedule view during operating days |
+| KPI-001 | Outside-hours online bookings | TBD | Any measurable outside-hours online bookings in the first month; target set after baseline | Count bookings completed online outside office hours |
+| KPI-002 | Total booking volume trend | TBD | Positive trend after launch | Compare total booking volume before and after launch |
+| KPI-003 | Reminder action tracking | TBD | TBD | Track reminder confirmations, cancellations, and reschedule requests |
+| KPI-004 | Staff daily schedule visibility | TBD | Staff can view the day’s appointments, statuses, and reminder confirmations in one place | Staff acceptance testing |
 
 ## 5. Scope
 
 ### 5.1 In Scope
 
-- Online booking for appointment types manually marked by staff as eligible for online booking.
-- Online booking for both existing and new patients.
-- Required new-patient intake details and insurance information before confirming an available slot.
-- Patient rescheduling for eligible appointments up to a clinic-configured cutoff time.
+- Online booking for selected standard, low-risk appointment types.
+- Existing-patient identity verification by one-time code sent to phone or email.
+- Existing-patient online rescheduling outside a clinic-defined cutoff window.
+- New-patient appointment requests routed to staff review without booking a slot.
 - SMS and email appointment reminders.
-- Reminder consent capture, opt-out support, and delivery/failure visibility for staff.
-- Staff day schedule view with patient, provider, time, status, appointment type, and contact/reminder status.
-- Clinic administrator controls for online-bookable appointment types and rescheduling cutoff rules.
-- Integration with the existing scheduling/EHR system if available; import/export as an interim dependency if integration is not available.
+- Reminder actions to confirm, cancel, or request reschedule.
+- Staff daily schedule view showing appointments, appointment status, and reminder confirmations.
+- Integration with the existing practice management/EHR scheduling system as the source of truth.
+- Explicit handling of no matching slots, failed identity match, and temporary scheduling integration unavailability.
+- WCAG 2.1 AA accessibility for patient-facing booking flows.
+- HIPAA-compliant handling of PHI and reminder content.
 
 ### 5.2 Out of Scope
 
-- Payments.
-- Telehealth visits.
-- Waitlist management.
-- Room assignments.
-- Clinical triage.
-- Provider capacity planning or advanced scheduling optimization.
-- Voice call reminders.
+- Direct online booking for all appointment types.
+- Direct booking by new patients without staff review.
+- Intake form completion from reminders.
+- Phone call reminders.
+- Replacing the existing practice management/EHR scheduling system.
+- Rescheduling inside the clinic-defined cutoff window.
 
 ## 6. Personas and Users
 
-### PERSONA-001 — Patient
+### PERSONA-001 — Existing Patient
 
-- **Description:** Existing or new clinic patient who wants to book or reschedule eligible appointments online.
+- **Description:** A patient already known to the clinic who wants to book or reschedule selected standard, low-risk appointments online.
 - **Primary Need:** Complete scheduling tasks without calling during office hours.
-- **Key Pain Point:** Phone-only scheduling creates friction and prevents booking outside office hours.
+- **Key Pain Point:** Phone-only booking is unavailable when the office is closed.
 
-### PERSONA-002 — Front-Desk Staff
+### PERSONA-002 — New Patient
 
-- **Description:** Clinic staff responsible for managing daily appointments, scheduling follow-up, and handling patient communication.
-- **Primary Need:** See the day’s schedule and appointment communication status in one place.
-- **Key Pain Point:** Missed calls, manual scheduling work, and fragmented schedule visibility create operational burden.
+- **Description:** A patient not yet established with the clinic who wants to request an appointment online.
+- **Primary Need:** Submit an appointment request without calling during office hours.
+- **Key Pain Point:** Cannot directly access clinic scheduling outside phone hours.
 
-### PERSONA-003 — Clinic Administrator
+### PERSONA-003 — Clinic Staff
 
-- **Description:** Clinic operator or manager responsible for scheduling policies, eligible appointment types, compliance, and rollout configuration.
-- **Primary Need:** Control which appointment types are bookable online and maintain HIPAA-aligned scheduling operations.
-- **Key Pain Point:** Needs patient convenience without exposing inappropriate appointment types or compliance risk.
+- **Description:** Clinic team members responsible for managing schedules, reviewing requests, and monitoring appointment status.
+- **Primary Need:** See the day’s schedule, statuses, and reminder confirmations in one place.
+- **Key Pain Point:** Scheduling activity and reminder responses are difficult to manage without a consolidated daily view.
 
 ## 7. Assumptions and Dependencies
 
 ### Assumptions
 
-- ASM-001 — The clinic has appointment types that can be safely marked as eligible for online booking without clinical triage (assumption).
-- ASM-002 — Patients can provide required intake details and insurance information online before confirmation (assumption).
-- ASM-003 — SMS and email reminder vendors can support HIPAA-aligned operations with required business associate agreements where applicable (assumption).
-- ASM-004 — The clinic can define a rescheduling cutoff time before launch (assumption).
+- ASM-001 — The clinic can identify which appointment types are standard and low-risk for online booking.
+- ASM-002 — Existing patient records contain phone or email data sufficient for one-time code verification.
+- ASM-003 — The clinic will define the rescheduling cutoff window before launch.
+- ASM-004 — Reminder content can be configured to meet HIPAA minimum-necessary expectations.
+- ASM-005 — Staff will continue using the existing practice management/EHR scheduling system as the operational source of truth.
 
 ### Dependencies
 
-- DEP-001 — Existing scheduling/EHR system capabilities determine whether launch uses integration or interim import/export.
-- DEP-002 — HIPAA-aligned vendors and business associate agreements are required for services that handle protected health information.
-- DEP-003 — Staff must configure which appointment types are eligible for online booking.
-- DEP-004 — Clinic policy must define the rescheduling cutoff time.
+- DEP-001 — Existing practice management/EHR scheduling system integration for availability, appointment creation, updates, and daily schedule data.
+- DEP-002 — SMS and email delivery services suitable for clinic reminder workflows.
+- DEP-003 — One-time code delivery through phone or email.
+- DEP-004 — Clinic-approved list of appointment types eligible for online booking.
+- DEP-005 — HIPAA compliance review of PHI handling, authentication, reminder content, and vendor obligations.
 
 ## 8. Functional Requirements
 
-### PRD-FR-001 — Configure Online-Bookable Appointment Types
+### PRD-FR-001 — Existing Patient Verification
 
 - **Priority:** Must
 - **Feature:** FEAT-001
-- **Persona:** PERSONA-003
+- **Persona:** PERSONA-001
 
 **Requirement**
 
-The system shall allow clinic administrators or authorized staff to mark appointment types as eligible or ineligible for online booking.
+The system shall verify existing patients using a one-time code sent to the patient’s phone or email before allowing online booking or rescheduling.
 
 **Business Rationale**
 
-The first release supports selected appointment types only, and staff need control to prevent inappropriate appointment types from being booked online.
+Verification protects patient scheduling access while supporting convenient online self-service.
 
 **Acceptance Criteria**
 
-1. An authorized user can mark an appointment type as online-bookable.
-2. An authorized user can remove online-bookable status from an appointment type.
-3. Patients only see appointment types marked as online-bookable in the patient booking flow.
-4. Appointment types not marked as online-bookable cannot be selected by patients online.
+1. An existing patient cannot complete booking or rescheduling until a valid one-time code is submitted.
+2. If the patient identity cannot be matched, the system prevents booking or rescheduling and displays a staff-contact or request-review path.
+3. The verification event is recorded for audit or operational review without exposing unnecessary PHI in patient-facing messages.
 
 ---
 
-### PRD-FR-002 — Book Eligible Appointments Online
+### PRD-FR-002 — Online Booking for Eligible Appointment Types
+
+- **Priority:** Must
+- **Feature:** FEAT-001
+- **Persona:** PERSONA-001
+
+**Requirement**
+
+The system shall allow verified existing patients to book only clinic-selected standard, low-risk appointment types online.
+
+**Business Rationale**
+
+Restricting online booking to approved appointment types reduces scheduling risk while addressing outside-hours booking loss.
+
+**Acceptance Criteria**
+
+1. The booking flow shows only appointment types marked eligible by staff or clinic configuration.
+2. A verified existing patient can select an available eligible appointment slot and complete booking online.
+3. A completed booking is reflected in the source scheduling system.
+4. Ineligible appointment types are not available for direct online booking.
+
+---
+
+### PRD-FR-003 — No Available Slot Handling
+
+- **Priority:** Must
+- **Feature:** FEAT-001
+- **Persona:** PERSONA-001
+
+**Requirement**
+
+The system shall handle cases where no available appointment slots match the patient’s selected criteria.
+
+**Business Rationale**
+
+Patients need a clear next step when online booking cannot present a matching slot.
+
+**Acceptance Criteria**
+
+1. When no matching slots exist, the system displays that no matching availability is available.
+2. The system does not create an appointment when no matching slot is selected.
+3. The patient is offered an alternate path consistent with clinic workflow, such as changing criteria or contacting/requesting staff assistance.
+
+---
+
+### PRD-FR-004 — Existing Patient Rescheduling
 
 - **Priority:** Must
 - **Feature:** FEAT-002
@@ -143,374 +190,314 @@ The first release supports selected appointment types only, and staff need contr
 
 **Requirement**
 
-The system shall allow existing and new patients to book available slots for appointment types marked as eligible for online booking.
+The system shall allow verified existing patients to reschedule eligible appointments only outside a clinic-defined cutoff window.
 
 **Business Rationale**
 
-Patients need a way to complete bookings outside office hours, reducing lost bookings caused by phone-only scheduling.
+Online rescheduling improves patient convenience while preserving clinic control over near-term schedule changes.
 
 **Acceptance Criteria**
 
-1. A patient can select an online-bookable appointment type and view available appointment slots.
-2. A patient can submit a booking for an available slot.
-3. The system prevents booking for unavailable slots.
-4. The system prevents patient booking for appointment types not marked as online-bookable.
-5. A successfully booked appointment appears in the staff day schedule view.
+1. If an appointment is outside the cutoff window, the patient can select an eligible replacement slot and complete rescheduling.
+2. If an appointment is inside the cutoff window, the system prevents direct rescheduling and displays the clinic-approved next step.
+3. A completed reschedule updates the source scheduling system and removes or updates the prior slot accordingly.
+4. The system uses the clinic-defined cutoff value once configured.
 
 ---
 
-### PRD-FR-003 — Collect New-Patient Intake and Insurance Information
-
-- **Priority:** Must
-- **Feature:** FEAT-002
-- **Persona:** PERSONA-001
-
-**Requirement**
-
-The system shall collect required intake details and insurance information from new patients before confirming an available appointment slot.
-
-**Business Rationale**
-
-New-patient bookings require safeguards before confirmation so staff have necessary intake and insurance information.
-
-**Acceptance Criteria**
-
-1. A new patient cannot complete confirmation until required intake fields are submitted.
-2. A new patient cannot complete confirmation until required insurance information is submitted.
-3. A completed new-patient booking includes submitted intake and insurance information for staff review.
-4. Existing patients are not forced through the new-patient intake flow unless identified as new patients.
-
----
-
-### PRD-FR-004 — Reschedule Eligible Appointments Online
+### PRD-FR-005 — New Patient Appointment Requests
 
 - **Priority:** Must
 - **Feature:** FEAT-003
-- **Persona:** PERSONA-001
-
-**Requirement**
-
-The system shall allow patients to reschedule eligible appointments up to a clinic-configured cutoff time.
-
-**Business Rationale**
-
-Patients need self-service flexibility while the clinic needs operational control over late schedule changes.
-
-**Acceptance Criteria**
-
-1. A patient can view rescheduling options for an appointment eligible for online rescheduling.
-2. A patient can move an eligible appointment to an available slot before the configured cutoff time.
-3. The system prevents patient self-service rescheduling after the configured cutoff time.
-4. The rescheduled appointment is reflected in the staff day schedule view.
-5. The system prevents rescheduling into unavailable slots.
-
----
-
-### PRD-FR-005 — Configure Rescheduling Cutoff
-
-- **Priority:** Must
-- **Feature:** FEAT-003
-- **Persona:** PERSONA-003
-
-**Requirement**
-
-The system shall allow authorized clinic administrators or staff to configure the cutoff time for patient self-service rescheduling.
-
-**Business Rationale**
-
-The clinic must control how close to an appointment patients can make schedule changes online.
-
-**Acceptance Criteria**
-
-1. An authorized user can set a rescheduling cutoff rule.
-2. The patient rescheduling flow enforces the configured cutoff rule.
-3. Unauthorized users cannot modify the rescheduling cutoff rule.
-
----
-
-### PRD-FR-006 — Send SMS and Email Reminders
-
-- **Priority:** Must
-- **Feature:** FEAT-004
-- **Persona:** PERSONA-001
-
-**Requirement**
-
-The system shall send appointment reminders by SMS and email to patients who have provided the required consent for each channel.
-
-**Business Rationale**
-
-Reminders support attendance and reduce manual reminder work while respecting consent requirements.
-
-**Acceptance Criteria**
-
-1. The system records whether a patient has consented to SMS reminders.
-2. The system records whether a patient has consented to email reminders.
-3. The system sends SMS reminders only when SMS consent is recorded.
-4. The system sends email reminders only when email consent is recorded.
-5. The system does not include protected health information in reminder content beyond the minimum necessary.
-
----
-
-### PRD-FR-007 — Manage Reminder Opt-Outs and Delivery Status
-
-- **Priority:** Must
-- **Feature:** FEAT-004
 - **Persona:** PERSONA-002
 
 **Requirement**
 
-The system shall allow reminder opt-out and show reminder delivery or failure status to staff.
+The system shall allow new patients to create pending appointment requests for staff review without booking a confirmed slot.
 
 **Business Rationale**
 
-Staff need visibility into failed communications and patients must be able to opt out of reminder channels.
+New-patient staff review protects clinic intake and scheduling controls while still capturing demand outside office hours.
 
 **Acceptance Criteria**
 
-1. A patient can opt out of SMS reminders.
-2. A patient can opt out of email reminders.
-3. Staff can see whether each reminder was delivered, failed, or not sent due to missing consent or opt-out.
-4. The system stops sending reminders through a channel after the patient opts out of that channel.
+1. A new patient can submit an appointment request online.
+2. Submitted new-patient requests are marked pending and are not placed as confirmed appointments on the schedule.
+3. Staff can identify pending new-patient requests for review.
+4. The system communicates to the patient that the request requires staff review.
 
 ---
 
-### PRD-FR-008 — View the Day’s Schedule
+### PRD-FR-006 — SMS and Email Reminders
+
+- **Priority:** Must
+- **Feature:** FEAT-004
+- **Persona:** PERSONA-001
+
+**Requirement**
+
+The system shall send appointment reminders through SMS and email.
+
+**Business Rationale**
+
+Reminders reduce missed appointments and give patients a convenient channel to act on scheduled visits.
+
+**Acceptance Criteria**
+
+1. The system can send an SMS reminder for a scheduled appointment when patient contact data supports SMS.
+2. The system can send an email reminder for a scheduled appointment when patient contact data supports email.
+3. Reminder content follows clinic-approved HIPAA-conscious content rules.
+4. Reminder delivery status is available for staff or operational review.
+
+---
+
+### PRD-FR-007 — Reminder Actions
+
+- **Priority:** Must
+- **Feature:** FEAT-004
+- **Persona:** PERSONA-001
+
+**Requirement**
+
+The system shall allow patients receiving reminders to confirm, cancel, or request reschedule from the reminder.
+
+**Business Rationale**
+
+Actionable reminders improve schedule reliability and give staff earlier visibility into patient intent.
+
+**Acceptance Criteria**
+
+1. A patient can confirm an appointment from a reminder-supported flow.
+2. A patient can cancel an appointment from a reminder-supported flow.
+3. A patient can request reschedule from a reminder-supported flow.
+4. Staff can see confirmation, cancellation, and reschedule-request status associated with the appointment or request.
+
+---
+
+### PRD-FR-008 — Staff Daily Schedule View
 
 - **Priority:** Must
 - **Feature:** FEAT-005
-- **Persona:** PERSONA-002
+- **Persona:** PERSONA-003
 
 **Requirement**
 
-The system shall provide staff with a day schedule view containing all appointments for the day with patient, provider, time, status, appointment type, and contact/reminder status.
+The system shall provide staff with a daily schedule view showing appointments, appointment status, and reminder confirmations in one place.
 
 **Business Rationale**
 
-Front-desk staff need one place to understand the day’s schedule and manage appointment communication.
+Staff need a consolidated daily view to manage schedule operations efficiently.
 
 **Acceptance Criteria**
 
-1. Staff can view all appointments scheduled for a selected day.
-2. Each appointment displays patient, provider, time, status, appointment type, and contact/reminder status.
-3. Online-booked appointments appear in the day schedule view after confirmation.
-4. Rescheduled appointments show the updated appointment time in the day schedule view.
+1. Staff can view the current day’s appointments in a single schedule view.
+2. Each appointment displays its current status when available from the source scheduling system.
+3. Reminder confirmation status is visible alongside the related appointment.
+4. The schedule view uses the existing practice management/EHR scheduling system as the source of truth.
 
 ---
 
-### PRD-FR-009 — Connect to Existing Scheduling/EHR Workflow
+### PRD-FR-009 — Scheduling System Integration Unavailability
 
-- **Priority:** Should
+- **Priority:** Must
 - **Feature:** FEAT-006
-- **Persona:** PERSONA-002
+- **Persona:** PERSONA-001
 
 **Requirement**
 
-The system shall integrate with the existing scheduling/EHR system if available, and shall support import/export as an interim workflow if integration is not available.
+The system shall handle temporary unavailability of the existing practice management/EHR scheduling integration.
 
 **Business Rationale**
 
-The clinic’s existing scheduling/EHR workflow is a dependency, and launch should avoid duplicate schedule management where possible.
+Patients and staff need safe behavior when availability or schedule updates cannot be confirmed.
 
 **Acceptance Criteria**
 
-1. If scheduling/EHR integration is available, online bookings and schedule updates synchronize with the existing scheduling/EHR workflow.
-2. If scheduling/EHR integration is not available, staff can use an import/export workflow to move schedule data between systems.
-3. The implementation approach is documented before launch as either integrated or import/export.
+1. If the scheduling integration is unavailable, the system does not create or modify confirmed appointments without source-system confirmation.
+2. The patient receives a clear message that online scheduling is temporarily unavailable or that staff follow-up is required.
+3. Staff can identify scheduling attempts or requests affected by integration unavailability.
 
 ## 9. Non-Functional Requirements
 
-### PRD-NFR-001 — HIPAA-Aligned PHI Protection
+### PRD-NFR-001 — HIPAA-Conscious PHI Handling
 
 - **Category:** Compliance
 - **Priority:** Must
 
 **Requirement**
 
-The system shall use HIPAA-aligned controls for protected health information, including business associate agreements with PHI-handling vendors, encryption in transit and at rest, role-based access, audit logs, and minimum necessary PHI handling.
+The system shall handle PHI in booking, rescheduling, reminders, identity verification, and staff views in a manner approved for HIPAA compliance by the clinic.
 
 **Acceptance Criteria**
 
-1. PHI-handling vendors have business associate agreements in place before production use.
-2. PHI is encrypted in transit and at rest in production environments.
-3. Staff access is restricted by role-based permissions.
-4. Access to PHI and changes to scheduling records are captured in audit logs.
-5. Reminder content is reviewed to verify it avoids PHI beyond the minimum necessary.
+1. HIPAA compliance review approves the PHI handling design before production launch.
+2. SMS and email reminder templates are approved for minimum-necessary PHI disclosure before production use.
+3. Vendors that process PHI are reviewed for HIPAA suitability before production use.
 
-### PRD-NFR-002 — Patient Accessibility and Mobile Support
+### PRD-NFR-002 — Patient-Facing Accessibility
 
 - **Category:** Accessibility
 - **Priority:** Must
 
 **Requirement**
 
-The patient booking and rescheduling experience shall be mobile-first, responsive, and meet WCAG 2.1 AA.
+The system shall meet WCAG 2.1 AA for patient-facing booking, rescheduling, reminder action, and new-patient request flows.
 
 **Acceptance Criteria**
 
-1. Patient booking and rescheduling pages render correctly on mobile and desktop viewport sizes.
-2. Accessibility testing verifies conformance with WCAG 2.1 AA for patient-facing scheduling flows.
-3. Core booking and rescheduling tasks can be completed using keyboard navigation and assistive technology.
+1. Patient-facing flows pass WCAG 2.1 AA accessibility review before launch.
+2. Keyboard-only users can complete supported patient-facing flows.
+3. Screen-reader users can understand form labels, errors, and confirmation states in supported patient-facing flows.
 
-### PRD-NFR-003 — Privacy-Conscious Reminder Content
+### PRD-NFR-003 — Source-of-Truth Data Integrity
 
-- **Category:** Privacy
+- **Category:** Reliability
 - **Priority:** Must
 
 **Requirement**
 
-The system shall avoid including protected health information in SMS and email reminder content beyond the minimum necessary for appointment reminders.
+The system shall treat the existing practice management/EHR scheduling system as the source of truth for availability, bookings, rescheduling, and daily schedule display.
 
 **Acceptance Criteria**
 
-1. SMS reminder templates do not include diagnosis, procedure details, or clinical notes.
-2. Email reminder templates do not include diagnosis, procedure details, or clinical notes.
-3. Reminder templates are reviewed before production use for minimum necessary PHI handling.
-
-### PRD-NFR-004 — Auditability
-
-- **Category:** Observability
-- **Priority:** Must
-
-**Requirement**
-
-The system shall maintain audit records for scheduling actions, reminder consent changes, opt-outs, and staff access to appointment data.
-
-**Acceptance Criteria**
-
-1. Booking, rescheduling, and schedule-view access events are recorded with actor, timestamp, and action.
-2. Reminder consent and opt-out changes are recorded with actor, timestamp, channel, and action.
-3. Authorized staff can retrieve audit records when needed for compliance review.
+1. Confirmed online bookings are not displayed as complete unless accepted by the source scheduling system.
+2. Confirmed reschedules are not displayed as complete unless accepted by the source scheduling system.
+3. The staff daily schedule view identifies or avoids stale schedule data when integration data cannot be refreshed.
 
 ## 10. User Journeys
 
-### JOURNEY-001 — Patient Books an Eligible Appointment Online
+### JOURNEY-001 — Existing Patient Books Online Outside Office Hours
 
-1. Patient opens the online scheduling experience outside office hours.
-2. Patient selects an appointment type marked as online-bookable.
-3. Patient selects an available slot.
-4. Existing patient confirms required booking information, or new patient submits required intake and insurance information.
-5. Appointment is confirmed and appears in the staff day schedule view.
+1. Existing patient opens the online booking flow outside office hours.
+2. Patient verifies identity using a one-time code sent to phone or email.
+3. Patient selects an eligible standard, low-risk appointment type and available slot.
+4. System books the appointment through the source scheduling system.
+5. Patient receives booking confirmation and the appointment appears in the staff daily schedule view.
 
-**Related Requirements:** PRD-FR-001, PRD-FR-002, PRD-FR-003, PRD-FR-008, PRD-NFR-001, PRD-NFR-002
+**Related Requirements:** PRD-FR-001, PRD-FR-002, PRD-FR-003, PRD-FR-009, PRD-NFR-001, PRD-NFR-003
 
-### JOURNEY-002 — Patient Reschedules an Eligible Appointment
+### JOURNEY-002 — Existing Patient Reschedules Appointment
 
-1. Patient accesses their eligible appointment.
-2. System verifies the appointment is before the clinic-configured rescheduling cutoff.
-3. Patient selects a new available slot.
-4. System updates the appointment time.
-5. Staff day schedule view reflects the rescheduled appointment.
+1. Existing patient enters the rescheduling flow and verifies identity with a one-time code.
+2. System checks whether the appointment is outside the clinic-defined cutoff window.
+3. Patient selects an eligible replacement slot.
+4. System updates the appointment through the source scheduling system.
+5. Staff can see the updated appointment in the daily schedule view.
 
-**Related Requirements:** PRD-FR-004, PRD-FR-005, PRD-FR-008, PRD-NFR-001, PRD-NFR-002
+**Related Requirements:** PRD-FR-001, PRD-FR-004, PRD-FR-009, PRD-NFR-003
 
-### JOURNEY-003 — Patient Receives and Manages Reminders
+### JOURNEY-003 — Patient Responds to Reminder
 
-1. Patient provides SMS and/or email reminder consent.
-2. System sends reminders through consented channels.
-3. Patient may opt out of a reminder channel.
-4. Staff can see delivery, failure, opt-out, or not-sent status.
+1. Patient receives an SMS or email appointment reminder.
+2. Patient chooses to confirm, cancel, or request reschedule.
+3. System records the selected action.
+4. Staff can see the resulting status or request in the daily schedule context.
 
-**Related Requirements:** PRD-FR-006, PRD-FR-007, PRD-NFR-001, PRD-NFR-003, PRD-NFR-004
+**Related Requirements:** PRD-FR-006, PRD-FR-007, PRD-FR-008, PRD-NFR-001
 
-### JOURNEY-004 — Staff Reviews the Day’s Schedule
+### JOURNEY-004 — New Patient Requests Appointment
 
-1. Front-desk staff opens the day schedule view.
-2. Staff reviews all appointments for the selected day.
-3. Staff sees patient, provider, time, status, appointment type, and contact/reminder status.
-4. Staff identifies any failed reminders or schedule changes requiring follow-up.
+1. New patient opens the online appointment request flow.
+2. New patient submits an appointment request.
+3. System creates a pending request without booking a confirmed slot.
+4. Staff reviews the pending request.
 
-**Related Requirements:** PRD-FR-008, PRD-FR-009, PRD-NFR-001, PRD-NFR-004
+**Related Requirements:** PRD-FR-005, PRD-FR-008, PRD-NFR-001, PRD-NFR-002
 
 ## 11. Feature Breakdown
 
-### FEAT-001 — Appointment Type Eligibility Configuration
+### FEAT-001 — Existing Patient Online Booking
 
-- **Summary:** Enables authorized staff to choose which appointment types patients can book online.
+- **Summary:** Verified existing patients can book clinic-selected standard, low-risk appointment types online.
 - **Priority:** Must
-- **Related Requirements:** PRD-FR-001
-- **Expected Spec File:** `specs/FEAT-001-appointment-type-eligibility-configuration.spec.md`
+- **Related Requirements:** PRD-FR-001, PRD-FR-002, PRD-FR-003, PRD-FR-009, PRD-NFR-001, PRD-NFR-002, PRD-NFR-003
+- **Expected Spec File:** `specs/FEAT-001-existing-patient-online-booking.spec.md`
 
-### FEAT-002 — Online Patient Booking
+### FEAT-002 — Existing Patient Rescheduling
 
-- **Summary:** Enables existing and new patients to book available slots for online-bookable appointment types, including new-patient intake and insurance collection.
+- **Summary:** Verified existing patients can reschedule eligible appointments outside the clinic-defined cutoff window.
 - **Priority:** Must
-- **Related Requirements:** PRD-FR-002, PRD-FR-003, PRD-NFR-001, PRD-NFR-002
-- **Expected Spec File:** `specs/FEAT-002-online-patient-booking.spec.md`
+- **Related Requirements:** PRD-FR-001, PRD-FR-004, PRD-FR-009, PRD-NFR-001, PRD-NFR-003
+- **Expected Spec File:** `specs/FEAT-002-existing-patient-rescheduling.spec.md`
 
-### FEAT-003 — Patient Rescheduling
+### FEAT-003 — New Patient Appointment Requests
 
-- **Summary:** Enables patients to reschedule eligible appointments before a clinic-configured cutoff time.
+- **Summary:** New patients can submit pending appointment requests for staff review without booking a slot.
 - **Priority:** Must
-- **Related Requirements:** PRD-FR-004, PRD-FR-005, PRD-NFR-001, PRD-NFR-002
-- **Expected Spec File:** `specs/FEAT-003-patient-rescheduling.spec.md`
+- **Related Requirements:** PRD-FR-005, PRD-NFR-001, PRD-NFR-002
+- **Expected Spec File:** `specs/FEAT-003-new-patient-appointment-requests.spec.md`
 
-### FEAT-004 — Appointment Reminders
+### FEAT-004 — Appointment Reminders and Actions
 
-- **Summary:** Sends SMS and email reminders with consent, opt-out, delivery tracking, and minimum necessary PHI handling.
+- **Summary:** Patients receive SMS and email reminders and can confirm, cancel, or request reschedule.
 - **Priority:** Must
-- **Related Requirements:** PRD-FR-006, PRD-FR-007, PRD-NFR-001, PRD-NFR-003, PRD-NFR-004
-- **Expected Spec File:** `specs/FEAT-004-appointment-reminders.spec.md`
+- **Related Requirements:** PRD-FR-006, PRD-FR-007, PRD-NFR-001
+- **Expected Spec File:** `specs/FEAT-004-appointment-reminders-and-actions.spec.md`
 
-### FEAT-005 — Staff Day Schedule View
+### FEAT-005 — Staff Daily Schedule View
 
-- **Summary:** Gives staff one place to view the day’s appointments and contact/reminder status.
+- **Summary:** Staff can view the day’s appointments, appointment statuses, and reminder confirmations in one place.
 - **Priority:** Must
-- **Related Requirements:** PRD-FR-008, PRD-NFR-001, PRD-NFR-004
-- **Expected Spec File:** `specs/FEAT-005-staff-day-schedule-view.spec.md`
+- **Related Requirements:** PRD-FR-008, PRD-NFR-003
+- **Expected Spec File:** `specs/FEAT-005-staff-daily-schedule-view.spec.md`
 
-### FEAT-006 — Scheduling/EHR Workflow Connection
+### FEAT-006 — Scheduling Integration Resilience
 
-- **Summary:** Connects online scheduling to the clinic’s existing scheduling/EHR workflow through integration when available or import/export as an interim workflow.
-- **Priority:** Should
-- **Related Requirements:** PRD-FR-009, PRD-NFR-001, PRD-NFR-004
-- **Expected Spec File:** `specs/FEAT-006-scheduling-ehr-workflow-connection.spec.md`
+- **Summary:** The system safely handles unavailable scheduling-system integration without creating unconfirmed appointments.
+- **Priority:** Must
+- **Related Requirements:** PRD-FR-009, PRD-NFR-003
+- **Expected Spec File:** `specs/FEAT-006-scheduling-integration-resilience.spec.md`
 
 ## 12. Constraints
 
-- CON-001 — The product must support HIPAA-aligned handling of protected health information.
-- CON-002 — The clinic is a small business, so implementation should account for budget sensitivity.
-- CON-003 — Existing scheduling/EHR capabilities may constrain integration scope and may require an interim import/export workflow.
-- CON-004 — Target release date is not set; see OQ-002.
-- CON-005 — First release is limited to selected appointment types marked as eligible for online booking.
-- CON-006 — Reminder vendors that handle PHI must support required HIPAA-aligned agreements and controls.
+- CON-001 — The clinic is a small business, so the solution should avoid unnecessary operational complexity.
+- CON-002 — The product operates in healthcare and must support HIPAA-compliant handling of PHI.
+- CON-003 — The existing practice management/EHR scheduling system is the source of truth.
+- CON-004 — Direct online booking is limited to selected standard, low-risk appointment types.
+- CON-005 — Existing-patient rescheduling is limited to outside a clinic-defined cutoff window.
+- CON-006 — New patients can create pending requests only and cannot directly book confirmed slots.
 
 ## 13. Risks
 
 | ID | Risk | Impact | Likelihood | Mitigation |
 |---|---|---|---|---|
-| RISK-001 | Existing scheduling/EHR integration is unavailable or costly | High | Medium | Support import/export as an interim workflow and document the selected launch approach |
-| RISK-002 | HIPAA-aligned vendor agreements delay reminder launch | High | Medium | Identify PHI-handling vendors early and require BAAs before production use |
-| RISK-003 | Online-bookable appointment types are configured too broadly | High | Medium | Restrict launch to staff-marked eligible appointment types and exclude clinical triage |
-| RISK-004 | Success cannot be evaluated because baselines are not quantified | Medium | High | Establish baseline measurement for KPIs before or immediately after pilot launch |
-| RISK-005 | Reminder failures are missed by staff | Medium | Medium | Show delivery/failure status in the staff schedule view |
+| RISK-001 | Existing practice management/EHR integration cannot support required booking, rescheduling, or status data | High | TBD | Validate integration capabilities before finalizing implementation scope |
+| RISK-002 | Reminder content exposes more PHI than clinic policy allows | High | TBD | Require HIPAA-focused review and approval of reminder templates before launch |
+| RISK-003 | Patient identity cannot be reliably matched for one-time code verification | High | TBD | Provide safe failure handling and staff-assisted path when identity match fails |
+| RISK-004 | Staff workflow disruption reduces adoption | Medium | TBD | Keep the source scheduling system as source of truth and provide a focused daily view |
+| RISK-005 | Undefined cutoff window or eligible appointment list delays launch | Medium | TBD | Require clinic decisions on appointment eligibility and cutoff rules before release |
 
 ## 14. Open Questions
 
 | ID | Question | Owner | Status | Decision/Due Date |
 |---|---|---|---|---|
-| OQ-001 | What are the quantified baselines and launch targets for online booking adoption, missed scheduling calls, reminder delivery rate, and staff schedule usage? | Product Owner | Open | Not set |
-| OQ-002 | What is the target release date or pilot launch window? | Product Owner | Open | Not set |
-| OQ-003 | What exact rescheduling cutoff time should the clinic configure for launch? | Clinic Administrator | Open | Not set |
-| OQ-004 | Which existing scheduling/EHR system is used, and does it support the required integration approach? | Technical Owner | Open | Not set |
-| OQ-005 | Which fields are required for new-patient intake and insurance collection? | Clinic Administrator | Open | Not set |
+| OQ-001 | What is the baseline monthly count of outside-hours bookings, total bookings, reminder confirmations, cancellations, and reschedule requests? | Product Owner | Open | TBD |
+| OQ-002 | What numeric targets should replace “any measurable outside-hours online bookings” after baseline is known? | Product Owner | Open | TBD |
+| OQ-003 | Which exact appointment types are approved as standard, low-risk, and eligible for online booking? | Clinic Operations | Open | TBD |
+| OQ-004 | What is the clinic-defined cutoff window for online rescheduling? | Clinic Operations | Open | TBD |
+| OQ-005 | Which practice management/EHR system and integration capabilities are available? | Technical Owner | Open | TBD |
+| OQ-006 | What clinic-approved next step should patients see when no slots match, identity cannot be matched, or the scheduling integration is unavailable? | Product Owner | Open | TBD |
+| OQ-007 | What is the target release date? | Product Owner | Open | TBD |
+| OQ-008 | What reminder timing rules should apply for SMS and email reminders? | Clinic Operations | Open | TBD |
+| OQ-009 | What production support owner and escalation process will handle failed bookings, reminder failures, and pending requests? | Clinic Operations | Open | TBD |
 
 ## 15. Release and Rollout Considerations
 
-- **Target Release:** Not set; see OQ-002
-- **Rollout Approach:** Pilot with selected appointment types before broader rollout.
-- **Migration Considerations:** Existing scheduling/EHR integration should be used if available; otherwise launch requires an import/export workflow. Final approach depends on OQ-004.
-- **Training/Support Considerations:** Staff training should cover appointment type eligibility configuration, the day schedule view, reminder delivery/failure status, opt-out handling, and any integration or import/export workflow.
+- **Target Release:** TBD
+- **Rollout Approach:** Launch with selected standard, low-risk appointment types and staff-reviewed new-patient requests.
+- **Migration Considerations:** No replacement of the existing practice management/EHR scheduling system is in scope; integration with the existing source of truth is required.
+- **Training/Support Considerations:** Staff need training on the daily schedule view, pending new-patient requests, reminder confirmations, cancellation indicators, reschedule requests, and exception handling.
 
 ## 16. Definition of Product Success
 
 The product is successful when:
 
-- Patients can book selected appointment types online without calling during office hours.
-- Patients can reschedule eligible appointments before the clinic-configured cutoff time.
-- SMS and email reminders are sent only with consent and show delivery/failure status to staff.
-- Front-desk staff can use one day schedule view to see appointments and reminder/contact status.
-- KPI targets in OQ-001 are defined and met or trending positively during rollout.
+- Existing patients can book eligible appointments online outside office hours.
+- Existing patients can reschedule eligible appointments outside the clinic-defined cutoff window.
+- New patients can submit pending appointment requests for staff review.
+- SMS and email reminders support confirmation, cancellation, and reschedule-request actions.
+- Staff can view the day’s appointments, statuses, and reminder confirmations in one place.
+- Outside-hours online bookings are measurable in the first month and total booking volume trend can be assessed.
 - All Must-priority requirements are accepted.
 - Required quality, security, and compliance outcomes are evidenced.
 
