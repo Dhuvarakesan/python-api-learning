@@ -22,3 +22,35 @@ export interface FilterState {
   month: MonthString;
   category: ExpenseCategory | null;
 }
+
+export interface ExpenseFormValues {
+  amount: string;
+  date: DateString | '';
+  category: ExpenseCategory | '';
+  description: string;
+}
+
+export interface NormalizedExpenseInput {
+  amount: number;
+  date: DateString;
+  category: ExpenseCategory;
+  description?: string;
+}
+
+export type ExpenseFormField = keyof ExpenseFormValues;
+
+export type ExpenseValidationErrors = Partial<
+  Record<ExpenseFormField, string>
+>;
+
+export type ExpenseValidationResult =
+  | {
+      isValid: true;
+      value: NormalizedExpenseInput;
+      errors: ExpenseValidationErrors;
+    }
+  | {
+      isValid: false;
+      value: null;
+      errors: ExpenseValidationErrors;
+    };
