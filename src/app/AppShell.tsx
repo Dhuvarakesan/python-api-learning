@@ -2,6 +2,11 @@ import { useMemo, useState } from 'react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Toast } from '../components/ui/Toast';
+import { formatInrCurrency } from '../domain/currency';
+import type { Expense } from '../domain/types';
+import { ExpenseDialog } from '../features/expenses/ExpenseDialog';
+import { useExpenseDialog } from '../features/expenses/useExpenseDialog';
+import { useSpendWiseState } from '../hooks/useSpendWiseState';
 import {
   defaultScreenId,
   primaryNavigation,
@@ -39,10 +44,61 @@ function ScreenPreview({ item }: { item: PrimaryNavigationItem }) {
   );
 }
 
+function ExpenseList({
+  expenses,
+  onEditExpense,
+}: {
+  expenses: Expense[];
+  onEditExpense(expense: Expense, opener: HTMLElement): void;
+}) {
+  return (
+    <Card className="expenses-panel" aria-labelledby="expenses-panel-title">
+      <div className="expenses-panel__header">
+        <div>
+          <p className="section-eyebrow">Expense records</p>
+          <h2 id="expenses-panel-title">Recent expenses</h2>
+        </div>
+        <span>{expenses.length} saved</span>
+      </div>
+
+      {expenses.length === 0 ? (
+        <p className="expenses-empty">
+          Added expenses will appear here for review and editing.
+        </p>
+      ) : (
+        <ul className="expense-list" aria-label="Recent expenses">
+          {expenses.map((expense) => (
+            <li className="expense-list__item" key={expense.id}>
+              <div>
+                <strong>{formatInrCurrency(expense.amount)}</strong>
+                <span>
+                  {expense.category} · {expense.date}
+                </span>
+                {expense.description ? <p>{expense.description}</p> : null}
+              </div>
+              <Button
+                aria-label={`Edit ${expense.category} expense from ${expense.date}`}
+                onClick={(event) =>
+                  onEditExpense(expense, event.currentTarget)
+                }
+                variant="secondary"
+              >
+                Edit
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
 export function AppShell() {
   const [activeScreenId, setActiveScreenId] =
     useState<PrimaryScreenId>(defaultScreenId);
   const [toastMessage, setToastMessage] = useState('');
+  const spendWiseState = useSpendWiseState();
+  const expenseDialog = useExpenseDialog();
 
   const activeScreen = useMemo(
     () =>
@@ -51,8 +107,38 @@ export function AppShell() {
     [activeScreenId],
   );
 
-  const showAddExpenseFeedback = () => {
-    setToastMessage('Add expense is ready for the expense entry flow.');
+  const openAddExpenseDialog = (opener: HTMLElement) => {
+    spendWiseState.cancelEdit();
+    setToastMessage('');
+    expenseDialog.openAddDialog(opener);
+  };
+
+  const openEditExpenseDialog = (expense: Expense, opener: HTMLElement) => {
+    if (!spendWiseState.beginEdit(expense.id)) {
+      return;
+    }
+
+    setToastMessage('');
+    expenseDialog.openEditDialog(expense, opener);
+  };
+
+  const closeExpenseDialog = () => {
+    spendWiseState.cancelEdit();
+    expenseDialog.closeDialog();
+  };
+
+  const saveExpense = () => {
+    const savedExpense =
+      expenseDialog.mode === 'edit' && expenseDialog.editingExpense
+        ? spendWiseState.updateExpense(
+            expenseDialog.editingExpense.id,
+            expenseDialog.values,
+          )
+        : spendWiseState.addExpense(expenseDialog.values);
+
+    if (savedExpense) {
+      expenseDialog.closeDialog();
+    }
   };
 
   const navigateTo = (screenId: PrimaryScreenId) => {
@@ -78,7 +164,10 @@ export function AppShell() {
             <span>Personal expense tracker</span>
           </div>
         </div>
-        <Button variant="primary" onClick={showAddExpenseFeedback}>
+        <Button
+          variant="primary"
+          onClick={(event) => openAddExpenseDialog(event.currentTarget)}
+        >
           Add expense
         </Button>
       </header>
@@ -120,8 +209,16 @@ export function AppShell() {
 
           <ScreenPreview item={activeScreen} />
 
+          <ExpenseList
+            expenses={spendWiseState.expenses}
+            onEditExpense={openEditExpenseDialog}
+          />
+
           <section className="action-row" aria-label="Current screen actions">
-            <Button variant="primary" onClick={showAddExpenseFeedback}>
+            <Button
+              variant="primary"
+              onClick={(event) => openAddExpenseDialog(event.currentTarget)}
+            >
               Add expense
             </Button>
             <Button
@@ -136,7 +233,20 @@ export function AppShell() {
         </main>
       </div>
 
-      <Toast message={toastMessage} open={toastMessage.length > 0} />
+      <ExpenseDialog
+        errors={spendWiseState.validationErrors}
+        mode={expenseDialog.mode}
+        onCancel={closeExpenseDialog}
+        onFieldChange={expenseDialog.updateField}
+        onSubmit={saveExpense}
+        open={expenseDialog.isOpen}
+        values={expenseDialog.values}
+      />
+
+      <Toast
+        message={spendWiseState.feedback?.message ?? toastMessage}
+        open={Boolean(spendWiseState.feedback?.message ?? toastMessage)}
+      />
     </div>
   );
 }
