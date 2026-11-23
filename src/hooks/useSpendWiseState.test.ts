@@ -54,7 +54,7 @@ describe('useSpendWiseState', () => {
     expect(result.current.expenses).toEqual([addedExpense]);
     expect(result.current.feedback).toEqual({
       type: 'success',
-      message: 'Expense added.',
+      message: 'Expense saved.',
     });
     expect(result.current.validationErrors).toEqual({});
     expect(result.current.revision).toBe(1);

@@ -124,8 +124,9 @@ export const useSpendWiseState = (
       const nextExpenses = [expense, ...expenses];
 
       commitExpenses(nextExpenses);
+      setEditingExpenseId(null);
       setValidationErrors({});
-      setFeedback({ type: 'success', message: 'Expense added.' });
+      setFeedback({ type: 'success', message: 'Expense saved.' });
 
       return expense;
     },
